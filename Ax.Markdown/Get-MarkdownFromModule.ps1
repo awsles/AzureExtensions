@@ -1,19 +1,26 @@
 <#
 .SYNOPSIS
-	Get-MarkdownFromModule
+	Get-MarkdownFromModule - Retrieve the help information in markdown format from one or all cmdlets within the specified module.
 	
 .DESCRIPTION
 	Create and populate a test CosmosDB
 	
 .PARAMETER Module
-	Indicates the Module Name
+	The purpose of this cmdlet is to generate documentation in Markdown format for a single cmdlet or all cmdlets in the specified PowerShell module.
+	This is useful not only for modules which you may create, but also for 3rd party modules which have poor online documentation
+	Running **Get-Help** on each cmdlet is tedious, so generating reference documentation in Markdown format helps.
+
+	Hopefully, this tool can evolve to help other PowerShell module developers to automatically generate their documentation page
+	directly from each cmdlet's help section.
+
 
 .NOTES
 	Author: Lester Waters
 	Version: v0.03
 	Date: 07-Mar-20
-	
-	TEST: .\New-MarkdownFromModule.ps1 -Module PowerShellforGithub | out-file C:\GIT\lesterw1\TechNotes\GITHUB\PowerShell_for_Github.md
+
+.EXAMPLE
+	.\New-MarkdownFromModule.ps1 -Module PowerShellforGithub | out-file C:\PowerShell_for_Github.md
 
 .LINK
 	https://docs.microsoft.com/en-us/powershell/scripting/samples/redirecting-data-with-out---cmdlets?view=powershell-7
