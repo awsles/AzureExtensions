@@ -1023,4 +1023,5 @@ Export-ModuleMember -Function New-AxCosmosDocument
 Export-ModuleMember -Function Remove-AxCosmosDatabase
 Export-ModuleMember -Function Remove-AxCosmosAccount
 Export-ModuleMember -Function Remove-AxCosmosDatabaseCollection
+Export-ModuleMember -Function Remove-AxCosmosDocument
 Export-ModuleMember -Function Select-AxCosmosDatabaseCollection
