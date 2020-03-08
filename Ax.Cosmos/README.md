@@ -21,11 +21,29 @@ All cmdlets are synchronous in this module in this version, so you just have to 
 time, these cmdlets will output a warning (which can be supressed with the -WarningAction switch) about the time it will take.
 The -Verbose switch can be used to display the actual time taken.
 
+## Cmdlets
+This module provides the following commands
+
+| Cmdlet | Description |
+| --- | --- |
+| Get-AxCosmosDatabase | Retrieve information for one or more databases in the Cosmos account. |
+| Get-AxCosmosDatabaseCollection | Retrieve one or more collections (containers) in the specified Cosmos database. |
+| Get-AxCosmosDocuments | Query for a Cosmos document object in the specified database (and optionally within a collection). |
+| New-AxCosmosAccount | Create a new Cosmos account. |
+| New-AxCosmosContext | Create a new AxCosmosContext. |
+| New-AxCosmosDatabase | Create a new Cosmos database. |
+| New-AxCosmosDatabaseCollection | Create a new collection (container) within a Cosmos database. |
+| New-AxCosmosDocument | Create a new document (object) within a Csomos collection. |
+| Remove-AxCosmosAccount | Delete a Cosmos account and all databases within. |
+| Remove-AxCosmosDatabase | Delete a Cosmos database instance. |
+| Remove-AxCosmosDatabaseCollection | Delete a collection (container) within a Cosmos database. |
+| Select-AxCosmosDatabaseCollection | Select the Cosmos database and collection (container) to use. |
+
 ### Documentation
 The cmdlets are documented in the (https://github.com/lesterw1/AzureExtensions/blob/master/Ax.Cosmos/Ax.Cosmos.md)[Ax.Cosmos.md] page in this repository.
 
 
-### Getting Started
+## Getting Started
 The following steps will help you get started:
 
 1) Install and import the Ax.Cosmos module.
@@ -102,27 +120,8 @@ Querying for Cosmos documents (objects) using other properties is possible, but 
 to be passed in.  
 
 
-## Cmdlets
-This module provides the following commands
 
-| Cmdlet | Description |
-| --- | --- |
-| Get-AxCosmosAuthSignature | 
-| Get-AxCosmosDatabase | 
-| Get-AxCosmosDatabaseCollection | 
-| Get-AxCosmosDocuments | 
-| New-AxCosmosAccount | 
-| New-AxCosmosContext | 
-| New-AxCosmosDatabase | 
-| New-AxCosmosDatabaseCollection | 
-| New-AxCosmosDocument | 
-| Remove-AxCosmosAccount | 
-| Remove-AxCosmosDatabase | 
-| Remove-AxCosmosDatabaseCollection | 
-| Select-AxCosmosDatabaseCollection | 
-
-
-## AxCosmosContext Object
+### AxCosmosContext Object
 The Ax.Cosmos module requires that a *context* be created in order to work with
 databases and collections. The **AxCosmosContext** object, used to hold this context,
 contains the access key, the currently selected collection / container name, and the
