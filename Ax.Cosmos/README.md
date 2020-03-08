@@ -17,7 +17,7 @@ but it will be necessary to then create a database and container before Cosmos d
 Use **Select-AxCosmosDatabaseCollection** to switch between collections (contgainers) within the selected database.
 
 The **New-AxCosmosAccount** and **New-AxCosmosDatabase** cmdlets can take up to 10 minutes to complete.
-All cmdlets are synchronous in this module in this version, so you just have to wait. Given the length of
+All cmdlets are synchronous in this module version (so you just have to wait for the cmdlet to complete). Given the length of
 time, these cmdlets will output a warning (which can be supressed with the -WarningAction switch) about the time it will take.
 The -Verbose switch can be used to display the actual time taken.
 
@@ -28,7 +28,7 @@ This module provides the following commands
 | --- | --- |
 | Get-AxCosmosDatabase | Retrieve information for one or more databases in the Cosmos account. |
 | Get-AxCosmosDatabaseCollection | Retrieve one or more collections (containers) in the specified Cosmos database. |
-| Get-AxCosmosDocuments | Query for a Cosmos document object in the specified database (and optionally within a collection). |
+| Get-AxCosmosDocument | Query for a Cosmos document object in the specified database (and optionally within a collection). |
 | New-AxCosmosAccount | Create a new Cosmos account. |
 | New-AxCosmosContext | Create a new AxCosmosContext. |
 | New-AxCosmosDatabase | Create a new Cosmos database. |
@@ -37,6 +37,7 @@ This module provides the following commands
 | Remove-AxCosmosAccount | Delete a Cosmos account and all databases within. |
 | Remove-AxCosmosDatabase | Delete a Cosmos database instance. |
 | Remove-AxCosmosDatabaseCollection | Delete a collection (container) within a Cosmos database. |
+| Remove-AxCosmosDocument | Delete an existing Cosmos document by id. |
 | Select-AxCosmosDatabaseCollection | Select the Cosmos database and collection (container) to use. |
 
 ### Documentation
@@ -57,7 +58,7 @@ The process takes 5 to 10 minutes to complete.
 
 ```
 New-AzResourceGroup -Name 'rg-cosmos' -Location 'westeurope'
-$c = New-AxCosmosAccount -AccountName 'mycosmosaccount12345' -ResourceGroupName 'rg-cosmos' -Location 'westeurope' -Verbose -Force
+$c = New-AxCosmosAccount -AccountName 'contoso' -ResourceGroupName 'rg-cosmos' -Location 'westeurope' -Verbose -Force
 ```
 The **New-AxCosmosAccount** returns a AxCosmosAccountContext object which must be used for subsequent access to the account.
 
@@ -95,10 +96,10 @@ The -Upsert switch can be used to replace the document object if it already exis
 Note that Cosmos does not support partial document updates, so the entire document must be rewritten each time
 any change is required.
 
-6) Lastly, we can query for this object using the 'id' property:
+6) Next, we can query for this object using the 'id' property:
 
 ```
-Get-AxCosmosDocuments -Context $c -idValue '100'
+Get-AxCosmosDocument -Context $c -idValue '100'
 ```
 
 This will return the object that we created in step 5, which will also
@@ -119,6 +120,11 @@ _ts          : 1583664616
 Querying for Cosmos documents (objects) using other properties is possible, but requires a more advanced structure
 to be passed in.  
 
+7) Lastly, we can remove the Cosmos document using the id:
+
+```
+Remove-AxCosmosDocument -Context $c -idValue '100'
+```
 
 
 ### AxCosmosContext Object
@@ -129,20 +135,20 @@ partition key name associated with the collection.
 
 For example:
 ```
-accountName       : mycosmosaccount12345
+accountName       : contoso
 resourceGroupName : rg-cosmos
 subscriptionId    : 00000000-0000-0000-0000-000000000000
 location          : 
 databaseName      : MyDatabase
 collectionName    : MyCollection
 partitionKeyName  : Country
-AzDabatasePath    : mycosmosaccount12345/sql/MyDatabase
-AzContainerPath   : mycosmosaccount12345/sql/MyDatabase/MyCollection
+AzDabatasePath    : contoso/sql/MyDatabase
+AzContainerPath   : contoso/sql/MyDatabase/MyCollection
 keyType           : master
 tokenVersion      : 1.0
 hmacSHA256        : System.Security.Cryptography.HMACSHA256
-endPoint          : https://mycosmosaccount12345.documents.azure.com
-collectionURI     : https://mycosmosaccount12345.documents.azure.com/dbs/MyDatabase/colls/MyCollection
+endPoint          : https://contoso.documents.azure.com
+collectionURI     : https://contoso.documents.azure.com/dbs/MyDatabase/colls/MyCollection
 ApiVersion        : 2018-06-18
 ```
 
@@ -155,12 +161,14 @@ In no particular order:
 
 * Add the individual help headers for each cmdlet function so that **Get-Help** may  be used to retrieve the documentation for each.
 
-* Implement Remove-AxCosmosDocument
+* Implement Remove-AxCosmosDocument using query parameters (vs just by id).
 
 * Provide support for various Cosmos account sizes, replication settings, etc.
 The current implementation is hard-coded for a small size.
 
 * Implement support for Get-AxCosmosDocument with complex queries.
+
+* Improve error handling.
 
 * Eliminate need for .Key property in AxCosmosContext.
 This involves changing the code to use the hmacSHA256 instance. 
@@ -174,5 +182,8 @@ Provide a "simple" mode along side the more complex query mode.
 * Fill in *location* property in AxCosmosContext Object. 
 This is a known issue in that the underlying API does not return the location for some unknown reason.
 
-
+### Implementation Notes
+This module is itself implemented in PowerShell using a combination of the Azure **AzResource**
+cmdlets (Get-AzResource, New-AzResource, Remove-AzResource) and by calling Cosmos REST APIs directly. 
+It is intended for casual use of Cosmos databases and would benefit from being implemented in C#.NET.
 
