@@ -16,6 +16,10 @@ When creating a new Cosmos account with **New-AxCosmosAccount**, a context will 
 but it will be necessary to then create a database and container before Cosmos documents can be added.
 Use **Select-AxCosmosDatabaseCollection** to switch between collections (contgainers) within the selected database.
 
+### Documentation
+The cmdlets are documented in the Ax.CosmosDb.md page in this repository.
+**Get-Help** may also be used to retrieve the documentation for each cmdlet.
+
 ### Getting Started
 The following steps will help you get started.
 
@@ -26,7 +30,13 @@ Import-Module Ax.CosmosDb
 ```
 
 2) The first step is to create a Cosmos account. This can be done with the **New-AxCosmosAccount** cmdlet.
-The process takes almost 5 minutes to complete.
+The process takes almost 5 minutes to complete. 
+
+```
+New-AzResourceGroup -Name 'rg-cosmos' -Location 'westeurope'
+$c = New-AxCosmosAccount -AccountName 'mycosmosaccount12345' -ResourceGroupName 'rg-cosmos' -Location 'westeurope' -Verbose -Force
+```
+
 
 3)  TBD
 
@@ -59,5 +69,7 @@ This involves changing the code to use the hmacSHA256 instance.
 The cmdlet is fairly narrow and tedious to use.
 Provide a "simple" mode along side the more complex query mode.
 
-* 
+* Provide examples within each cmdlet in the .Example comment section.
+
+
 
