@@ -1,0 +1,179 @@
+# Ax.Cosmos
+The Ax.Cosmos module is provided as an interim PowerShell solution
+for Azure Cosmos in the absence of a Microsoft-provided solution.
+With this module, you can:
+
+* Create and delete Cosmos accounts
+* Create and delete Cosmos databases
+* Create and delete Cosmos collections (containers)
+* Create and update (upsert) Cosmos documents
+
+The Ax.Cosmos module requires that a *context* be created in order to work with
+databases and collections. The context contains the access key, the currently selected
+collection / container name, and the partition key name associated with the collection.
+The **New-AxCosmosContext** cmdlet is used to create a new context.
+When creating a new Cosmos account with **New-AxCosmosAccount**, a context will also be return
+but it will be necessary to then create a database and container before Cosmos documents can be added.
+Use **Select-AxCosmosDatabaseCollection** to switch between collections (contgainers) within the selected database.
+
+The **New-AxCosmosAccount** and **New-AxCosmosDatabase** cmdlets can take up to 10 minutes to complete.
+All cmdlets are synchronous in this module in this version, so you just have to wait. Given the length of
+time, these cmdlets will output a warning (which can be supressed with the -WarningAction switch) about the time it will take.
+The -Verbose switch can be used to display the actual time taken.
+
+### Documentation
+The cmdlets are documented in the (https://github.com/lesterw1/AzureExtensions/blob/master/Ax.Cosmos/Ax.Cosmos.md)[Ax.Cosmos.md] page in this repository.
+
+
+### Getting Started
+The following steps will help you get started:
+
+1) Install and import the Ax.Cosmos module.
+
+```
+Import-Module Ax.Cosmos
+```
+
+2) The first step is to create a Cosmos account. This can be done with the **New-AxCosmosAccount** cmdlet.
+The process takes 5 to 10 minutes to complete. 
+
+```
+New-AzResourceGroup -Name 'rg-cosmos' -Location 'westeurope'
+$c = New-AxCosmosAccount -AccountName 'mycosmosaccount12345' -ResourceGroupName 'rg-cosmos' -Location 'westeurope' -Verbose -Force
+```
+The **New-AxCosmosAccount** returns a AxCosmosAccountContext object which must be used for subsequent access to the account.
+
+3)  The next step is to create a database using the context $c from above:
+
+```
+New-AxCosmosDatabase -Context $c -DatabaseName 'MyDatabase' -Force -Verbose
+```
+
+The above creates a new database named 'MyDatabase'. The process takes 1 to 2 minutes.
+
+4) Next, create a collection (container) named 'MyCollection' within the database.
+Note that it is necessary to specify the DatabaseName in this cmdlet.
+
+```
+New-AxCosmosDatabaseCollection -Context $c -DatabaseName 'MyDatabase' -CollectionName 'MyCollection' -PartitionKeyName 'Country' -Force -Verbose
+```
+
+The above creates a new database named 'MyDatabase'. The context $c is updated with the selected database, collection, and
+partition key names so that subsequent use of the context will default accordingly.
+
+5) Now that a database and a collection has been created, we can insert a document:
+
+```
+$MyObject = '{ "id": "100",  "Name": "John Doe",   "City": "London",  "Country": "United Kingdom" }' | ConvertFrom-Json
+New-AxCosmosDocument -Context $c -Object $MyObject -Upsert -Verbose
+```
+
+There are _two_ REQUIRED properties in *every* object that is inserted into this container: (1) the 'id' property whose
+name MUST be lower case (e.g., 'id'); AND the property associated with the container's partition key must also be present
+and must exactly match case (e.g., for the above example, we used 'Country' so that property name must match exactly; e.g., 'country'
+is not acceptable).
+
+The -Upsert switch can be used to replace the document object if it already exists (i.e., has the same 'id' value).
+Note that Cosmos does not support partial document updates, so the entire document must be rewritten each time
+any change is required.
+
+6) Lastly, we can query for this object using the 'id' property:
+
+```
+Get-AxCosmosDocuments -Context $c -idValue '100'
+```
+
+This will return the object that we created in step 5, which will also
+have some additional properties attached as shown below:
+
+```
+id           : 100
+Name         : John Doe
+City         : London
+Country      : United Kingdom
+_rid         : jhVrAKo4XREBAAAAAAAAAA==
+_self        : dbs/jhVrAA==/colls/jhVrAKo4XRE=/docs/jhVrAKo4XREBAAAAAAAAAA==/
+_etag        : "0000d72a-0000-0d00-0000-5e64cde80000"
+_attachments : attachments/
+_ts          : 1583664616
+```
+
+Querying for Cosmos documents (objects) using other properties is possible, but requires a more advanced structure
+to be passed in.  
+
+
+## Cmdlets
+This module provides the following commands
+
+| Cmdlet | Description |
+| --- | --- |
+| Get-AxCosmosAuthSignature | 
+| Get-AxCosmosDatabase | 
+| Get-AxCosmosDatabaseCollection | 
+| Get-AxCosmosDocuments | 
+| New-AxCosmosAccount | 
+| New-AxCosmosContext | 
+| New-AxCosmosDatabase | 
+| New-AxCosmosDatabaseCollection | 
+| New-AxCosmosDocument | 
+| Remove-AxCosmosAccount | 
+| Remove-AxCosmosDatabase | 
+| Remove-AxCosmosDatabaseCollection | 
+| Select-AxCosmosDatabaseCollection | 
+
+
+## AxCosmosContext Object
+The Ax.Cosmos module requires that a *context* be created in order to work with
+databases and collections. The **AxCosmosContext** object, used to hold this context,
+contains the access key, the currently selected collection / container name, and the
+partition key name associated with the collection.
+
+For example:
+```
+accountName       : mycosmosaccount12345
+resourceGroupName : rg-cosmos
+subscriptionId    : 00000000-0000-0000-0000-000000000000
+location          : 
+databaseName      : MyDatabase
+collectionName    : MyCollection
+partitionKeyName  : Country
+AzDabatasePath    : mycosmosaccount12345/sql/MyDatabase
+AzContainerPath   : mycosmosaccount12345/sql/MyDatabase/MyCollection
+keyType           : master
+tokenVersion      : 1.0
+hmacSHA256        : System.Security.Cryptography.HMACSHA256
+endPoint          : https://mycosmosaccount12345.documents.azure.com
+collectionURI     : https://mycosmosaccount12345.documents.azure.com/dbs/MyDatabase/colls/MyCollection
+ApiVersion        : 2018-06-18
+```
+
+The hmacSHA256 property contains the object which is used to digitally sign the underlyig Cosmos REST APIs.
+Note that the location property is not filled in as the underlying API does not yet return it.
+
+
+## Next Steps
+In no particular order:
+
+* Add the individual help headers for each cmdlet function so that **Get-Help** may  be used to retrieve the documentation for each.
+
+* Implement Remove-AxCosmosDocument
+
+* Provide support for various Cosmos account sizes, replication settings, etc.
+The current implementation is hard-coded for a small size.
+
+* Implement support for Get-AxCosmosDocument with complex queries.
+
+* Eliminate need for .Key property in AxCosmosContext.
+This involves changing the code to use the hmacSHA256 instance. 
+
+* Improve the Query-AxCosmosDocuments cmdlet.
+The cmdlet is fairly narrow and tedious to use.
+Provide a "simple" mode along side the more complex query mode.
+
+* Provide examples within each cmdlet in the .Example comment section.
+
+* Fill in *location* property in AxCosmosContext Object. 
+This is a known issue in that the underlying API does not return the location for some unknown reason.
+
+
+
