@@ -76,7 +76,7 @@ Note that it is necessary to specify the DatabaseName in this cmdlet.
 New-AxCosmosDatabaseCollection -Context $c -DatabaseName 'MyDatabase' -CollectionName 'MyCollection' -PartitionKeyName 'Country' -Force -Verbose
 ```
 
-The above creates a new database named 'MyDatabase'. The context $c is updated with the selected database, collection, and
+. The above creates a new database named 'MyDatabase'. The context $c is updated with the selected database, collection, and
 partition key names so that subsequent use of the context will default accordingly.
 
 5) Now that a database and a collection has been created, we can insert a document:
