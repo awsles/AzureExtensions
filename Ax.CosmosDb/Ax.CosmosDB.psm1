@@ -17,7 +17,7 @@
 .NOTES
 	Author: Lester Waters
 	Version: v0.05
-	Date: 07-Mar-20
+	Date: 08-Mar-20
 	
 	Place module in one of the folders in: ($env:PSModulePath -split ';').
 	
@@ -675,16 +675,16 @@ Function Select-AxCosmosDatabaseCollection {
 
 
 # +---------------------------------------------+
-# |  Create-AxCosmosDocument					|
+# |  New-AxCosmosDocument						|
 # +---------------------------------------------+
-# TEST: Create-AxCosmosDocument -Context $c -Object $Entry1 -Upsert -Verbose
+# TEST: New-AxCosmosDocument -Context $c -Object $Entry1 -Upsert -Verbose
 $Entry1 = New-Object PsObject
 $Entry1 | Add-Member -NotePropertyName 'id' -NotePropertyValue 'FriendlyID1'
 $Entry1 | Add-Member -NotePropertyName "_partitionKey" -NotePropertyValue "Partition1"
 $Entry1 | Add-Member -NotePropertyName '_lastUpdate' -NotePropertyValue (get-date)
 $Entry1 | Add-Member -NotePropertyName 'Description' -NotePropertyValue "This is a friendly id value"
 
-Function Create-AxCosmosDocument {
+Function New-AxCosmosDocument {
     [CmdletBinding()]
     Param(
 		[Parameter(Mandatory=$true)][AxCosmosContext]	$Context,		# Context object
@@ -770,7 +770,7 @@ Function Create-AxCosmosDocument {
         $streamReader.Close()
 		if (Test-Debug)
 		{
-			write-host -ForegroundColor Cyan "`n==== DEBUG: Create-AxCosmosDocument ===="
+			write-host -ForegroundColor Cyan "`n==== DEBUG: New-AxCosmosDocument ===="
 			write-host -ForegroundColor Yellow "---- URI --------"
 			write-host "$Verb  $queryUri"
 			write-host -ForegroundColor Yellow "---- Headers ----"
@@ -877,7 +877,7 @@ Function Remove-AxCosmosDocument {
         $streamReader.Close()
 		if (Test-Debug)
 		{
-			write-host -ForegroundColor Cyan "`n==== DEBUG: Create-AxCosmosDocument ===="
+			write-host -ForegroundColor Cyan "`n==== DEBUG: New-AxCosmosDocument ===="
 			write-host -ForegroundColor Yellow "---- URI --------"
 			write-host "$Verb  $queryUri"
 			write-host -ForegroundColor Yellow "---- Headers ----"
@@ -1008,15 +1008,15 @@ $query=@"
 # |  MODULE EXPORTS																					|
 # +=================================================================================================+
 Export-ModuleMember -Function Get-AxCosmosAuthSignature 
+Export-ModuleMember -Function Get-AxCosmosDatabase
+Export-ModuleMember -Function Get-AxCosmosDocuments
+Export-ModuleMember -Function Get-AxCosmosDatabaseCollection
 Export-ModuleMember -Function New-AxCosmosContext
 Export-ModuleMember -Function New-AxCosmosAccount
-Export-ModuleMember -Function Remove-AxCosmosAccount
 Export-ModuleMember -Function New-AxCosmosDatabase
-Export-ModuleMember -Function Remove-AxCosmosDatabase
-Export-ModuleMember -Function Get-AxCosmosDatabase
 Export-ModuleMember -Function New-AxCosmosDatabaseCollection
+Export-ModuleMember -Function New-AxCosmosDocument
+Export-ModuleMember -Function Remove-AxCosmosDatabase
+Export-ModuleMember -Function Remove-AxCosmosAccount
 Export-ModuleMember -Function Remove-AxCosmosDatabaseCollection
-Export-ModuleMember -Function Get-AxCosmosDatabaseCollection
 Export-ModuleMember -Function Select-AxCosmosDatabaseCollection
-Export-ModuleMember -Function Create-AxCosmosDocument
-Export-ModuleMember -Function Get-AxCosmosDocuments
