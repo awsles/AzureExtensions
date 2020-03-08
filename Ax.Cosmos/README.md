@@ -56,7 +56,7 @@ Import-Module Ax.Cosmos
 2) The first step is to create a Cosmos account. This can be done with the **New-AxCosmosAccount** cmdlet.
 The process takes 5 to 10 minutes to complete. 
 
-```
+```powershell
 New-AzResourceGroup -Name 'rg-cosmos' -Location 'westeurope'
 $c = New-AxCosmosAccount -AccountName 'contoso' -ResourceGroupName 'rg-cosmos' -Location 'westeurope' -Verbose -Force
 ```
@@ -64,7 +64,7 @@ The **New-AxCosmosAccount** returns a AxCosmosAccountContext object which must b
 
 3)  The next step is to create a database using the context $c from above:
 
-```
+```powershell
 New-AxCosmosDatabase -Context $c -DatabaseName 'MyDatabase' -Force -Verbose
 ```
 
@@ -73,7 +73,7 @@ The above creates a new database named 'MyDatabase'. The process takes 1 to 2 mi
 4) Next, create a collection (container) named 'MyCollection' within the database.
 Note that it is necessary to specify the DatabaseName in this cmdlet.
 
-```
+```powershell
 New-AxCosmosDatabaseCollection -Context $c -DatabaseName 'MyDatabase' -CollectionName 'MyCollection' -PartitionKeyName 'Country' -Force -Verbose
 ```
 
@@ -82,7 +82,7 @@ partition key names so that subsequent use of the context will default according
 
 5) Now that a database and a collection has been created, we can insert a document:
 
-```
+```powershell
 $MyObject = '{ "id": "100",  "Name": "John Doe",   "City": "London",  "Country": "United Kingdom" }' | ConvertFrom-Json
 New-AxCosmosDocument -Context $c -Object $MyObject -Upsert -Verbose
 ```
@@ -98,7 +98,7 @@ any change is required.
 
 6) Next, we can query for this object using the 'id' property:
 
-```
+```powershell
 Get-AxCosmosDocument -Context $c -idValue '100'
 ```
 
@@ -122,7 +122,7 @@ to be passed in.
 
 7) Lastly, we can remove the Cosmos document using the id:
 
-```
+```powershell
 Remove-AxCosmosDocument -Context $c -idValue '100'
 ```
 
