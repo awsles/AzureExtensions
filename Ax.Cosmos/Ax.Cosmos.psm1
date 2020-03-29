@@ -762,12 +762,11 @@ Function New-AxCosmosDocument {
 		}
 	}
 	
-	
 	# +-----------------------------+
 	# | Call REST Api				|
 	# +-----------------------------+
 	# Verbose & Debug Output
-	write-Verbose "New-AxCosmosDocument: Object id= $($object.id)  $partitionKeyName : '$($object.$partitionKeyName)' "
+	write-Verbose "New-AxCosmosDocument: Object id= $ID  $partitionKeyName : '$($object.$partitionKeyName)' "
 	write-Verbose "New-AxCosmosDocument: QueryURI: $queryUri"
 	if (Test-Debug)
 		{ write-Verbose "New-AxCosmosDocument:`n---- Request Header ----`n$($header | ConvertTo-Json)`n----------------" }  # DEBUG
@@ -896,11 +895,14 @@ Function New-AxCosmosBulkDocuments {
 			}
 		}
 	
+		# Get Object id
+		$ID = $Object.id
+	
 		# +-----------------------------+
 		# | Call REST API				|
 		# +-----------------------------+
 		# Verbose & Debug Output
-		write-Verbose "New-AxCosmosBulkDocuments: Object id= $($object.id)  $partitionKeyName : '$($object.$partitionKeyName)' "
+		write-Verbose "New-AxCosmosBulkDocuments: Object id= $ID  $partitionKeyName : '$($object.$partitionKeyName)' "
 		write-Verbose "New-AxCosmosBulkDocuments: QueryURI: $queryUri"
 		if (Test-Debug)
 			{ write-Verbose "New-AxCosmosDocument:`n---- Request Header ----`n$($header | ConvertTo-Json)`n----------------" }  # DEBUG
@@ -913,8 +915,9 @@ Function New-AxCosmosBulkDocuments {
 			# Perform call asynchronously
 			$Failed = $Null
 			
+			
 			# Wait for less than 50 running jobs...
-			write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $($Object.id)" -PercentComplete 10 -Status "Checking active jobs..."
+			write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $ID" -PercentComplete 10 -Status "Checking active jobs..."
 			$jobs = Get-Job
 			while (($jobs.count -gt 50) -And ((Get-Date) - $Timer).TotalSeconds -le ([timespan]"00:01:00.0000000").TotalSeconds)
 			{
@@ -938,7 +941,7 @@ Function New-AxCosmosBulkDocuments {
 			# Otherwise, queue this new job
 			if ($jobs.Count -le 50)
 			{
-				write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $($Object.id)" -PercentComplete 25 -Status "Queing job..."
+				write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $ID" -PercentComplete 25 -Status "Queing job..."
 
 				# Queue this job
 				$HeaderJSON = $Header | ConvertTo-json -Compress
@@ -955,7 +958,7 @@ Function New-AxCosmosBulkDocuments {
 		# Fall through to synchronous if too many jobs!
 
 		if ($Async) 
-			{ write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $($Object.id)" -PercentComplete 40 -Status "Creating object synchronously..." }
+			{ write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $ID" -PercentComplete 40 -Status "Creating object synchronously..." }
 
 		# Perform call synchronously
 		# https://stackoverflow.com/questions/35986647/how-do-i-get-the-body-of-a-web-request-that-returned-400-bad-request-from-invoke
@@ -1064,7 +1067,7 @@ Function Remove-AxCosmosDocument {
 	# Request TLS 1.2
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 	
-		write-host -ForegroundColor Cyan "Object id: $($object.id)`n$partitionKeyName : '$($object.$partitionKeyName)' "
+		write-host -ForegroundColor Cyan "Object id: $ID`n$partitionKeyName : '$($object.$partitionKeyName)' "
 		write-host -ForegroundColor Cyan "QueryURI: $queryUri"
 		write-host -ForegroundColor Cyan "---- Header ----`n$($header | ConvertTo-Json)`n----------------"  # DEBUG
 
@@ -1172,7 +1175,7 @@ $query=@"
 		if (Test-Debug)
 		{
 			write-host -ForegroundColor Cyan "`n==== DEBUG: Query-AxCosmosDocuments ===="
-			write-host -ForegroundColor Cyan "id: '$($object.id)'"
+			write-host -ForegroundColor Cyan "id: '$ID'"
 			write-host -ForegroundColor Yellow "---- URI --------"
 			write-host "$Verb  $queryUri"
 			write-host -ForegroundColor Yellow "---- Headers ----"
@@ -1196,7 +1199,7 @@ $query=@"
 		if (Test-Debug)
 		{
 			write-host -ForegroundColor Cyan "`n==== DEBUG: Query-AxCosmosDocuments ===="
-			write-host -ForegroundColor Cyan "id: '$($object.id)'"
+			write-host -ForegroundColor Cyan "id: '$ID'"
 			write-host -ForegroundColor Yellow "---- URI --------"
 			write-host "$Verb  $queryUri"
 			write-host -ForegroundColor Yellow "---- RawContet ----"
