@@ -29,7 +29,8 @@
 			https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.documents.resource.id?view=azure-dotnet
 			
 .LINK
-
+	https://docs.microsoft.com/en-us/rest/api/cosmos-db/
+	
 #>
 
 ## MODULE MANIFEST
@@ -682,53 +683,19 @@ Function Select-AxCosmosDatabaseCollection {
 # |  New-AxCosmosDocument						|
 # +---------------------------------------------+
 # TEST: New-AxCosmosDocument -Context $c -Object $Entry1 -Upsert -Verbose
-# https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview
 #
-$Entry1 = New-Object PsObject
-$Entry1 | Add-Member -NotePropertyName 'id' -NotePropertyValue 'FriendlyID1'
-$Entry1 | Add-Member -NotePropertyName "_partitionKey" -NotePropertyValue "Partition1"
-$Entry1 | Add-Member -NotePropertyName '_lastUpdate' -NotePropertyValue (get-date)
-$Entry1 | Add-Member -NotePropertyName 'Description' -NotePropertyValue "This is a friendly id value"
-
 Function New-AxCosmosDocument {
     [CmdletBinding()]
     Param(
 		[Parameter(Mandatory=$true)][AxCosmosContext]	$Context,		# Context object
 		[Parameter(Mandatory=$false)][Switch]			$Upsert,		# Creates the document with the ID if it doesn’t exist, or update it if it exists.
-        [Parameter(Mandatory=$true)][PsObject]			$Object			# JSON Document
+        [Parameter(Mandatory=$true)][PsObject]			$Object,			# JSON Document
+		[Parameter(Mandatory=$false)][Switch]			$SkipChecks		# If specified, then the object is NOT sanity checked
     )
 	
-	# Check for id
-	if (!$Object.id)
-	{
-		write-warning "'id' property is missing in object."
-	}
-
-	# The "id" property MUST be present in the Object with the name in lower case.
-	# The id property cannot exceed 255 characters in length.
-	# The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'
-	# https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.documents.resource.id?view=azure-dotnet
-	foreach ($c in [char[]]'/?#')
-	{
-		if ($Object.id.Contains($c))
-		{
-			throw "Invalid '$c' character in 'id' property. The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'."
-			return $null
-		}
-	}
-	if ($Object.id.Contains('\\'))
-	{
-		throw "Invalid '\\' in 'id' property. The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'."
-		return $null
-	}
-	
-	# Check that we have a Database and Collection
-	if ($Context.databaseName.Length -eq 0 -Or $Context.collectionName.Length -eq 0)
-	{
-		throw "Incomplete Context - Missing database or collection name. Try Select-AxCosmosDatabaseCollection."
-		return $null
-	}
-	
+	# +-----------------------------+
+	# | Prepare for REST API		|
+	# +-----------------------------+
 	# API Version - SEE: https://docs.microsoft.com/en-us/rest/api/cosmos-db/index
 	if ($Context.ApiVersion)
 		{ $ApiVersion = $Context.ApiVersion }
@@ -736,7 +703,6 @@ Function New-AxCosmosDocument {
 		{ $ApiVersion = "2018-06-18" }
 	
 	$Verb			= "POST"
-	$JSON 			= ($Object | ConvertTo-Json -Depth 3)
 	$UpsertTxt 		= $Upsert.ToString()				# True / False
     $ResourceType 	= "docs"
     $ResourceLink 	= "dbs/$($Context.databaseName)/colls/$($Context.CollectionName)"
@@ -758,17 +724,61 @@ Function New-AxCosmosDocument {
 	
 	# Request TLS 1.2
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+	# +-----------------------------+
+	# | Perform Checks				|
+	# +-----------------------------+
+	if (!$SkipChecks)
+	{
+		# Check for id
+		if (!$Object.id)
+		{
+			write-warning "'id' property is missing in object."
+		}
+
+		# The "id" property MUST be present in the Object with the name in lower case.
+		# The id property cannot exceed 255 characters in length.
+		# The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'
+		# https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.documents.resource.id?view=azure-dotnet
+		foreach ($c in [char[]]'/?#')
+		{
+			if ($Object.id.Contains($c)) 	
+			{
+				throw "Invalid '$c' character in 'id' property. The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'."
+				return $null
+			}
+		}
+		if ($Object.id.Contains('\\'))
+		{
+			throw "Invalid '\\' in 'id' property. The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'."
+			return $null
+		}
+		
+		# Check that we have a Database and Collection
+		if ($Context.databaseName.Length -eq 0 -Or $Context.collectionName.Length -eq 0)
+		{
+			throw "Incomplete Context - Missing database or collection name. Try Select-AxCosmosDatabaseCollection."
+			return $null
+		}
+	}
 	
-		write-Verbose "New-AxCosmosDocument: Object id= $($object.id)  $partitionKeyName : '$($object.$partitionKeyName)' "
-		write-Verbose "New-AxCosmosDocument: QueryURI: $queryUri"
-		if (Test-Debug)
-			{ write-Verbose "New-AxCosmosDocument:`n---- Request Header ----`n$($header | ConvertTo-Json)`n----------------" }  # DEBUG
+	
+	# +-----------------------------+
+	# | Call REST Api				|
+	# +-----------------------------+
+	# Verbose & Debug Output
+	write-Verbose "New-AxCosmosDocument: Object id= $($object.id)  $partitionKeyName : '$($object.$partitionKeyName)' "
+	write-Verbose "New-AxCosmosDocument: QueryURI: $queryUri"
+	if (Test-Debug)
+		{ write-Verbose "New-AxCosmosDocument:`n---- Request Header ----`n$($header | ConvertTo-Json)`n----------------" }  # DEBUG
+
+	$JSON 			= ($Object | ConvertTo-Json -Depth 3)
 
 	# https://stackoverflow.com/questions/35986647/how-do-i-get-the-body-of-a-web-request-that-returned-400-bad-request-from-invoke
 	try {
 		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON # -Verbose -Debug # -ErrorVariable WebError
     }
-   catch [System.Net.WebException] {
+	catch [System.Net.WebException] {
 		# Below helps us get the REAL error reason instead of the 400 error
         $streamReader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
 		$streamReader.BaseStream.Position = 0
@@ -789,6 +799,193 @@ Function New-AxCosmosDocument {
 		return $null
     }
 	
+	return $result
+}
+
+
+# +---------------------------------------------+
+# |  New-AxCosmosBulkDocuments					|
+# +---------------------------------------------+
+# TEST: New-AxCosmosDocument -Context $c -Object $Entry1 -Upsert -Verbose
+# Input is an array of PSObject. All objects MUST have the same partitionKey Value.
+# https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview
+#
+Function New-AxCosmosBulkDocuments {
+    [CmdletBinding()]
+    Param(
+		[Parameter(Mandatory=$true)][AxCosmosContext]	$Context,		# Context object
+		[Parameter(Mandatory=$false)][Switch]			$Upsert,		# Creates the documents with the ID if they don't exist, or update it if it exists.
+        [Parameter(Mandatory=$true)][System.Array]		$Objects,		# Array of PSObject - JSON Documents
+		[Parameter(Mandatory=$false)][Switch]			$SkipChecks,	# If specified, then the objects are NOT sanity checked
+		[Parameter(Mandatory=$false)][Switch]			$Async			# If specified, then the REST calls are made via sub-jbs (50 concurrent max)
+    )
+	
+	# +-----------------------------+
+	# | Prepare for REST API		|
+	# +-----------------------------+
+	# API Version - SEE: https://docs.microsoft.com/en-us/rest/api/cosmos-db/index
+	if ($Context.ApiVersion)
+		{ $ApiVersion = $Context.ApiVersion }
+	else
+		{ $ApiVersion = "2018-06-18" }
+	
+	$Verb			= "POST"
+	$UpsertTxt 		= $Upsert.ToString()				# True / False
+    $ResourceType 	= "docs"
+    $ResourceLink 	= "dbs/$($Context.databaseName)/colls/$($Context.CollectionName)"
+	$contentType	= "application/json"
+    $queryUri 		= "$($Context.EndPoint)/$ResourceLink/$ResourceType" # $Context.collectionURI + "/docs"
+    $dateTime 		= [DateTime]::UtcNow.ToString("r")  # .ToLowerInvariant()
+    $authHeader 	= Get-AxCosmosAuthSignature -verb $Verb -resourceLink $ResourceLink -resourceType $ResourceType `
+							-key $Context.Key -keyType $Context.keyType -tokenVersion $Context.tokenVersion -dateTime $dateTime
+
+	if ($Context.partitionKeyName)
+	{ 
+		# This needs to be the VALUE of the partition key for THIS entry and NOT the name of the partition key.
+	    $partitionkeyValue = "[""$($Objects[0].$($Context.partitionKeyName))""]" 
+		$header = @{authorization=$authHeader;"x-ms-version"=$ApiVersion;"x-ms-date"=$dateTime;"x-ms-documentdb-partitionkey"=$partitionkeyValue;"x-ms-documentdb-is-upsert"=$UpsertTxt}
+		$partitionKeyName = $Context.partitionKey
+	}
+	else
+		{ $header = @{authorization=$authHeader;"x-ms-version"=$ApiVersion;"x-ms-date"=$dateTime;"x-ms-documentdb-is-upsert"=$UpsertTxt} }
+	
+	# Request TLS 1.2
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+	# +-----------------------------+
+	# | Loop through Array			|
+	# +-----------------------------+
+	foreach ($Object in $Objects)
+	{
+		$Timer = Get-Date
+
+		# +-----------------------------+
+		# | Perform Checks				|
+		# +-----------------------------+
+		if (!$SkipChecks)
+		{
+			# Check for id
+			if (!$Object.id)
+			{
+				write-warning "'id' property is missing in object."
+			}
+
+			# The "id" property MUST be present in the Object with the name in lower case.
+			# The id property cannot exceed 255 characters in length.
+			# The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'
+			# https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.documents.resource.id?view=azure-dotnet
+			foreach ($c in [char[]]'/?#')
+			{
+				if ($Object.id.Contains($c)) 	
+				{
+					throw "Invalid '$c' character in 'id' property. The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'."
+					return $null
+				}
+			}
+			if ($Object.id.Contains('\\'))
+			{
+				throw "Invalid '\\' in 'id' property. The following characters are restricted and cannot be used in the id property: '/', '\\', '?', '#'."
+				return $null
+			}
+			
+			# Check that we have a Database and Collection
+			if ($Context.databaseName.Length -eq 0 -Or $Context.collectionName.Length -eq 0)
+			{
+				throw "Incomplete Context - Missing database or collection name. Try Select-AxCosmosDatabaseCollection."
+				return $null
+			}
+		}
+	
+		# +-----------------------------+
+		# | Call REST API				|
+		# +-----------------------------+
+		# Verbose & Debug Output
+		write-Verbose "New-AxCosmosBulkDocuments: Object id= $($object.id)  $partitionKeyName : '$($object.$partitionKeyName)' "
+		write-Verbose "New-AxCosmosBulkDocuments: QueryURI: $queryUri"
+		if (Test-Debug)
+			{ write-Verbose "New-AxCosmosDocument:`n---- Request Header ----`n$($header | ConvertTo-Json)`n----------------" }  # DEBUG
+
+		# Turn object into JSON
+		$JSON = ($Object | ConvertTo-Json -Depth 3 -Compress)
+		
+		if ($Async)
+		{
+			# Perform call asynchronously
+			$Failed = $Null
+			
+			# Wait for less than 50 running jobs...
+			write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $($Object.id)" -PercentComplete 10 -Status "Checking active jobs..."
+			$jobs = Get-Job
+			while (($jobs.count -gt 50) -And ((Get-Date) - $Timer).TotalSeconds -le ([timespan]"00:01:00.0000000").TotalSeconds)
+			{
+				# Remove Completed Jobs
+				$Jobs | Where-Object {$_.State -like 'Completed'} | Remove-Job
+			
+				# Failed Jobs
+				$Failed = $Jobs | Where-Object {$_.State -like 'Failed'} | Receive-Job
+				$Jobs | Where-Object {$_.State -like 'Failed'} | Remove-Job
+				
+				$jobs = Get-Job
+			}
+			# If any failed, then abort
+			if ($Failed)
+			{
+				write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments" -PercentComplete 100 -Status "Failed jobs" -Completed
+				write-warning "Jobs have failed..."
+				throw $Failed
+				return 
+			}
+			# Otherwise, queue this new job
+			if ($jobs.Count -le 50)
+			{
+				write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $($Object.id)" -PercentComplete 25 -Status "Queing job..."
+
+				# Queue this job
+				$HeaderJSON = $Header | ConvertTo-json -Compress
+
+				$sb1  = "`$Headers = @{}; `$HeaderJSON = '$HeaderJSON' `n"
+				$sb1 += "`$jsonObj = `$HeaderJSON | ConvertFrom-Json `n"
+				$sb1 += "foreach (`$property in `$jsonObj.PSObject.Properties) { `$Headers[`$property.Name] = `$property.Value } `n"
+				$sb1 += "Invoke-WebRequest -Method '$Verb' -ContentType '$contentType' -Uri '$queryUri' -Headers `$Headers -Body '$JSON'"
+				$sb = [scriptblock]::Create($sb1)
+				$x = Start-Job -Name $Object.id -ScriptBlock $sb
+				Continue;
+			}
+		}
+		# Fall through to synchronous if too many jobs!
+
+		if ($Async) 
+			{ write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $($Object.id)" -PercentComplete 40 -Status "Creating object synchronously..." }
+
+		# Perform call synchronously
+		# https://stackoverflow.com/questions/35986647/how-do-i-get-the-body-of-a-web-request-that-returned-400-bad-request-from-invoke
+		try {
+			$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON # -Verbose -Debug # -ErrorVariable WebError
+		}
+		catch [System.Net.WebException] {
+			# Below helps us get the REAL error reason instead of the 400 error
+			$streamReader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
+			$streamReader.BaseStream.Position = 0
+			$response = ($streamReader.ReadToEnd() | ConvertFrom-Json)
+			$streamReader.Close()
+			if (Test-Debug)
+			{
+				write-host -ForegroundColor Cyan "`n==== DEBUG: New-AxCosmosBulkDocuments ===="
+				write-host -ForegroundColor Yellow "---- URI --------"
+				write-host "$Verb  $queryUri"
+				write-host -ForegroundColor Yellow "---- Headers ----"
+				[string[]] $l_array = ($header | Out-String -Stream) -notmatch '^$' | select -Skip 2 ; 	write-host $l_array
+				write-host -ForegroundColor Yellow "---- Body ------" ; write-host $query ; write-host -ForegroundColor Yellow "-----------------`n"
+			}
+			Throw "ERROR in Invoke-WebRequest: $($response.code) : $($response.message.Split(',')[0])"
+			# $response | fl  # DEBUG
+			# write-host ($_ | ConvertTo-json -Depth 4)   # $_.TargetObject   (LOTS OF STUFF!!)
+			write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments" -PercentComplete 100 - Completed
+			return $null
+		}
+	}
+	
+	write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments" -PercentComplete 100 -Completed
 	return $true
 }
 
@@ -1022,6 +1219,7 @@ Export-ModuleMember -Function New-AxCosmosAccount
 Export-ModuleMember -Function New-AxCosmosDatabase
 Export-ModuleMember -Function New-AxCosmosDatabaseCollection
 Export-ModuleMember -Function New-AxCosmosDocument
+Export-ModuleMember -Function New-AxCosmosBulkDocuments
 Export-ModuleMember -Function Remove-AxCosmosDatabase
 Export-ModuleMember -Function Remove-AxCosmosAccount
 Export-ModuleMember -Function Remove-AxCosmosDatabaseCollection
