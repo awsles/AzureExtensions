@@ -169,6 +169,21 @@ The hmacSHA256 property contains the object which is used to digitally sign the 
 Note that the location property is not filled in as the underlying API does not yet return it.
 
 
+## Performance
+Achieving decent performance is challenging. Event with 20,000 RUs configured, adding/upserting documents is dead slow.
+I attempted to improve this by spawning jobs for calling the Cosmos REST API via Invoke-WebRequest, but even this ran
+into its own issues. Some observations:
+
+* The Cosmos REST API only allows a single document to be synchronously added at a time. 
+There doesn't appear to be any API to allow multiple documents to be created at once.
+The .NET team has created a bulk executor library for Cosmos: https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview
+but this 1st cut of the module is itself in powershell so cannot yet take advantage. 
+
+* The **Invoke-RestMethod** cmdlet has an unexplainable lag, as if the requests are being serialized.
+
+Bottom line: If you have a lot of data to insert/update, you may need to develop your own solution.
+But if you happy with some lightweight use, this library is acceptable.
+
 ## Next Steps
 In no particular order:
 
