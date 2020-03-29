@@ -16,8 +16,8 @@
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.07
-	Date: 08-Mar-20
+	Version: v0.08
+	Date: 29-Mar-20
 	
 	Place module in one of the folders in: ($env:PSModulePath -split ';')
 	
@@ -38,7 +38,7 @@ $manifest = @{
     Path				= '.\Ax.Cosmos\Ax.Cosmos.psd1'
     RootModule			= 'Ax.Cosmos.psm1' 
     Author				= 'Lester Waters'
-	ModuleVersion 		= '0.07'
+	ModuleVersion 		= '0.08'
 	Description			= 'PowerShell cmdlets which perform selected CosmosDB actions'
     PowerShellVersion	= '5.0'
 }
@@ -682,6 +682,8 @@ Function Select-AxCosmosDatabaseCollection {
 # |  New-AxCosmosDocument						|
 # +---------------------------------------------+
 # TEST: New-AxCosmosDocument -Context $c -Object $Entry1 -Upsert -Verbose
+# https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview
+#
 $Entry1 = New-Object PsObject
 $Entry1 | Add-Member -NotePropertyName 'id' -NotePropertyValue 'FriendlyID1'
 $Entry1 | Add-Member -NotePropertyName "_partitionKey" -NotePropertyValue "Partition1"
@@ -736,7 +738,6 @@ Function New-AxCosmosDocument {
 	$Verb			= "POST"
 	$JSON 			= ($Object | ConvertTo-Json -Depth 3)
 	$UpsertTxt 		= $Upsert.ToString()				# True / False
-	write-host "Upsert is $UpsertTxt"
     $ResourceType 	= "docs"
     $ResourceLink 	= "dbs/$($Context.databaseName)/colls/$($Context.CollectionName)"
 	$contentType	= "application/json"
@@ -758,13 +759,14 @@ Function New-AxCosmosDocument {
 	# Request TLS 1.2
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 	
-		write-host -ForegroundColor Cyan "Object id: $($object.id)`n$partitionKeyName : '$($object.$partitionKeyName)' "
-		write-host -ForegroundColor Cyan "QueryURI: $queryUri"
-		write-host -ForegroundColor Cyan "---- Header ----`n$($header | ConvertTo-Json)`n----------------"  # DEBUG
+		write-Verbose "New-AxCosmosDocument: Object id= $($object.id)  $partitionKeyName : '$($object.$partitionKeyName)' "
+		write-Verbose "New-AxCosmosDocument: QueryURI: $queryUri"
+		if (Test-Debug)
+			{ write-Verbose "New-AxCosmosDocument:`n---- Request Header ----`n$($header | ConvertTo-Json)`n----------------" }  # DEBUG
 
 	# https://stackoverflow.com/questions/35986647/how-do-i-get-the-body-of-a-web-request-that-returned-400-bad-request-from-invoke
 	try {
-		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON -Debug # -Verbose -Debug # -ErrorVariable WebError
+		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON # -Verbose -Debug # -ErrorVariable WebError
     }
    catch [System.Net.WebException] {
 		# Below helps us get the REAL error reason instead of the 400 error
@@ -784,10 +786,10 @@ Function New-AxCosmosDocument {
 		Throw "ERROR in Invoke-WebRequest: $($response.code) : $($response.message.Split(',')[0])"
 		# $response | fl  # DEBUG
 		# write-host ($_ | ConvertTo-json -Depth 4)   # $_.TargetObject   (LOTS OF STUFF!!)
-		return 
+		return $null
     }
 	
-	return $null
+	return $true
 }
 
 
