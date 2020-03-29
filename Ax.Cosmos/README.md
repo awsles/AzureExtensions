@@ -33,7 +33,8 @@ This module provides the following commands
 | New-AxCosmosContext | Create a new AxCosmosContext. |
 | New-AxCosmosDatabase | Create a new Cosmos database. |
 | New-AxCosmosDatabaseCollection | Create a new collection (container) within a Cosmos database. |
-| New-AxCosmosDocument | Create a new document (object) within a Csomos collection. |
+| New-AxCosmosDocument | Create a new document (object) within a Cosmos collection. |
+| New-AxCosmoBulkDocuments | Creates multiple documents (objects) within a Cosmos collection. |
 | Remove-AxCosmosAccount | Delete a Cosmos account and all databases within. |
 | Remove-AxCosmosDatabase | Delete a Cosmos database instance. |
 | Remove-AxCosmosDatabaseCollection | Delete a collection (container) within a Cosmos database. |
