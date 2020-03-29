@@ -47,13 +47,25 @@ The cmdlets are documented in the (https://github.com/lesterw1/AzureExtensions/b
 ## Getting Started
 The following steps will help you get started:
 
-1) Install and import the Ax.Cosmos module.
+1) Install the Ax.Cosmos module.
+This is done by first determining where modules are installed. Start PowerShell and run the command:
+```
+$Env:PSModulePath
+```
+This will result in several paths.
+Use the first path if you want the module to be available for a specific user.
+Use the second path to make the module available for all users.
+
+Next, copy or download the **Ax.Cosmos** into the new path.
+
+
+2) Import the Ax.Cosmos module.
 
 ```
 Import-Module Ax.Cosmos
 ```
 
-2) The first step is to create a Cosmos account. This can be done with the **New-AxCosmosAccount** cmdlet.
+3) The first step is to create a Cosmos account. This can be done with the **New-AxCosmosAccount** cmdlet.
 The process takes 5 to 10 minutes to complete. 
 
 ```powershell
@@ -62,7 +74,7 @@ $c = New-AxCosmosAccount -AccountName 'contoso' -ResourceGroupName 'rg-cosmos' -
 ```
 The **New-AxCosmosAccount** returns a AxCosmosAccountContext object which must be used for subsequent access to the account.
 
-3)  The next step is to create a database using the context $c from above:
+4)  The next step is to create a database using the context $c from above:
 
 ```powershell
 New-AxCosmosDatabase -Context $c -DatabaseName 'MyDatabase' -Force -Verbose
@@ -70,7 +82,7 @@ New-AxCosmosDatabase -Context $c -DatabaseName 'MyDatabase' -Force -Verbose
 
 The above creates a new database named 'MyDatabase'. The process takes 1 to 2 minutes.
 
-4) Next, create a collection (container) named 'MyCollection' within the database.
+5) Next, create a collection (container) named 'MyCollection' within the database.
 Note that it is necessary to specify the DatabaseName in this cmdlet.
 
 ```powershell
@@ -80,7 +92,7 @@ New-AxCosmosDatabaseCollection -Context $c -DatabaseName 'MyDatabase' -Collectio
 The above creates a new database named 'MyDatabase'. The context $c is updated with the selected database, collection, and
 partition key names so that subsequent use of the context will default accordingly.
 
-5) Now that a database and a collection has been created, we can insert a document:
+6) Now that a database and a collection has been created, we can insert a document:
 
 ```powershell
 $MyObject = '{ "id": "100",  "Name": "John Doe",   "City": "London",  "Country": "United Kingdom" }' | ConvertFrom-Json
@@ -96,7 +108,7 @@ The -Upsert switch can be used to replace the document object if it already exis
 Note that Cosmos does not support partial document updates, so the entire document must be rewritten each time
 any change is required.
 
-6) Next, we can query for this object using the 'id' property:
+7) Next, we can query for this object using the 'id' property:
 
 ```powershell
 Get-AxCosmosDocument -Context $c -idValue '100'
@@ -120,7 +132,7 @@ _ts          : 1583664616
 Querying for Cosmos documents (objects) using other properties is possible, but requires a more advanced structure
 to be passed in.  
 
-7) Lastly, we can remove the Cosmos document using the id:
+8) Lastly, we can remove the Cosmos document using the id:
 
 ```powershell
 Remove-AxCosmosDocument -Context $c -idValue '100'
