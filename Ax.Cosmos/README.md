@@ -41,7 +41,7 @@ This module provides the following commands
 | Select-AxCosmosDatabaseCollection | Select the Cosmos database and collection (container) to use. |
 
 ### Documentation
-The cmdlets are documented in the (https://github.com/lesterw1/AzureExtensions/blob/master/Ax.Cosmos/Ax.Cosmos.md)[Ax.Cosmos.md] page in this repository.
+The cmdlets are documented in the [https://github.com/lesterw1/AzureExtensions/blob/master/Ax.Cosmos/Ax.Cosmos.md](Ax.Cosmos.md) page in this repository.
 
 
 ## Getting Started
