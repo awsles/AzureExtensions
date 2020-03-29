@@ -41,7 +41,7 @@ This module provides the following commands
 | Select-AxCosmosDatabaseCollection | Select the Cosmos database and collection (container) to use. |
 
 ### Documentation
-The cmdlets are documented in the (https://github.com/lesterw1/AzureExtensions/blob/master/Ax.Cosmos/Ax.Cosmos.md)[Ax.Cosmos.md] page in this repository.
+The cmdlets are documented in the [https://github.com/lesterw1/AzureExtensions/blob/master/Ax.Cosmos/Ax.Cosmos.md](Ax.Cosmos.md) page in this repository.
 
 
 ## Getting Started
@@ -170,6 +170,8 @@ Note that the location property is not filled in as the underlying API does not 
 
 ## Next Steps
 In no particular order:
+
+* Ensure all the functions have headers. The documentation is generated from these headers.
 
 * Add the individual help headers for each cmdlet function so that **Get-Help** may  be used to retrieve the documentation for each.
 
