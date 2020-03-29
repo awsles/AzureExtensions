@@ -159,6 +159,8 @@ Note that the location property is not filled in as the underlying API does not 
 ## Next Steps
 In no particular order:
 
+* Ensure all the functions have headers. The documentation is generated from these headers.
+
 * Add the individual help headers for each cmdlet function so that **Get-Help** may  be used to retrieve the documentation for each.
 
 * Implement Remove-AxCosmosDocument using query parameters (vs just by id).
