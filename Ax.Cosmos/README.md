@@ -59,8 +59,8 @@ This will result in several paths.
 Use the first path if you want the module to be available for a specific user.
 Use the second path to make the module available for all users.
 
-Next, copy or download the **Ax.Cosmos** into the new path.
-
+Next, copy or download the **Ax.Cosmos** *as a folder* into the new path. That is, you
+should have an **Ax.Cosmos** folder in the directory referenced by **$Env:PSModulePath**.
 
 2) Import the Ax.Cosmos module.
 
