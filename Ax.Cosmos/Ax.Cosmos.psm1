@@ -775,7 +775,7 @@ Function New-AxCosmosDocument {
 
 	# https://stackoverflow.com/questions/35986647/how-do-i-get-the-body-of-a-web-request-that-returned-400-bad-request-from-invoke
 	try {
-		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON # -Verbose -Debug # -ErrorVariable WebError
+		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON -UseBasicParsing # -Verbose -Debug # -ErrorVariable WebError
     }
 	catch [System.Net.WebException] {
 		# Below helps us get the REAL error reason instead of the 400 error
@@ -910,6 +910,17 @@ Function New-AxCosmosBulkDocuments {
 		# Turn object into JSON
 		$JSON = ($Object | ConvertTo-Json -Depth 3 -Compress)
 		
+		# Asynchronous Calls
+		#
+		# The Cosmos REST API only allows ONE document to be synchronously created at a time.
+		# This is a hack which uses PowerShell jobs to parallelize calls to Invoke-WebRequest.
+		# But Invoke-WebRequest itself isn't very efficient; nor are powershell jobs.
+		# We also disable the progress bar for Invoke-WebRequest. SEE:
+		# https://github.com/PowerShell/PowerShell/issues/2138)
+		# https://stackoverflow.com/questions/28682642/powershell-why-is-using-invoke-webrequest-much-slower-than-a-browser-download
+		#
+		# TODO: Currently, each job does ONE write. Next, we will have each job do multiple writes (say 50 items).
+		#
 		if ($Async)
 		{
 			# Perform call asynchronously
@@ -931,6 +942,7 @@ Function New-AxCosmosBulkDocuments {
 				$jobs = Get-Job
 			}
 			# If any failed, then abort
+			# TODO: Improve the handling here...
 			if ($Failed)
 			{
 				write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments" -PercentComplete 100 -Status "Failed jobs" -Completed
@@ -939,17 +951,20 @@ Function New-AxCosmosBulkDocuments {
 				return 
 			}
 			# Otherwise, queue this new job
+			# TODO: Each job cleans itself up; also the final failed jobs are not detected!
 			if ($jobs.Count -le 50)
 			{
 				write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $ID" -PercentComplete 25 -Status "Queing job..."
 
 				# Queue this job
+				# Convert hashtable to json
 				$HeaderJSON = $Header | ConvertTo-json -Compress
-
+				# Add script to convert json back to hashtable inside scriptblock
 				$sb1  = "`$Headers = @{}; `$HeaderJSON = '$HeaderJSON' `n"
 				$sb1 += "`$jsonObj = `$HeaderJSON | ConvertFrom-Json `n"
 				$sb1 += "foreach (`$property in `$jsonObj.PSObject.Properties) { `$Headers[`$property.Name] = `$property.Value } `n"
-				$sb1 += "Invoke-WebRequest -Method '$Verb' -ContentType '$contentType' -Uri '$queryUri' -Headers `$Headers -Body '$JSON'"
+				$sb1 += "`$ProgressPreference = 'SilentlyContinue'`n"
+				$sb1 += "Invoke-WebRequest -Method '$Verb' -ContentType '$contentType' -Uri '$queryUri' -Headers `$Headers -Body '$JSON' -UseBasicParsing"
 				$sb = [scriptblock]::Create($sb1)
 				$x = Start-Job -Name $Object.id -ScriptBlock $sb
 				Continue;
@@ -960,12 +975,15 @@ Function New-AxCosmosBulkDocuments {
 		if ($Async) 
 			{ write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments - $ID" -PercentComplete 40 -Status "Creating object synchronously..." }
 
-		# Perform call synchronously
+		# Perform call synchronously (disable ProgressPreference to speed up Invoke-WebRequest)
 		# https://stackoverflow.com/questions/35986647/how-do-i-get-the-body-of-a-web-request-that-returned-400-bad-request-from-invoke
+		$pp = $ProgressPreference
+		$ProgressPreference = 'SilentlyContinue'
 		try {
-			$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON # -Verbose -Debug # -ErrorVariable WebError
+			$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON -UseBasicParsing # -Verbose -Debug # -ErrorVariable WebError
 		}
 		catch [System.Net.WebException] {
+			$ProgressPreference = $pp
 			# Below helps us get the REAL error reason instead of the 400 error
 			$streamReader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
 			$streamReader.BaseStream.Position = 0
@@ -987,7 +1005,7 @@ Function New-AxCosmosBulkDocuments {
 			return $null
 		}
 	}
-	
+	$ProgressPreference = $pp
 	write-progress -ID 5 -Activity "New-AxCosmosBulkDocuments" -PercentComplete 100 -Completed
 	return $true
 }
