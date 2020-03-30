@@ -142,7 +142,6 @@ to be passed in.
 Remove-AxCosmosDocument -Context $c -idValue '100'
 ```
 
-
 ### AxCosmosContext Object
 The Ax.Cosmos module requires that a *context* be created in order to work with
 databases and collections. The **AxCosmosContext** object, used to hold this context,
@@ -187,8 +186,6 @@ but this 1st cut of the module is itself in powershell so cannot yet take advant
 Some benchmarks using Ax.Cosmos and the **Test-BulkInsert.ps1** script for insertion of 1,000 items with a
 database container configured for Throughput of 20,000 (RU/s). For this version, the concurrent jobs is set to 50.
 
-# Cosmos is configured for 20,000 RU/Sec Throughput 
-
 | **BulkSize** | **Async** | **Elapsed Time** | **Cosmos Time** | **Time per Item** |
 | --- | --- | --- | --- |--- |
 | 50 | False | 00:01:42.7553027 | 00:01:34.8130316 | 0.095 Seconds |
@@ -200,6 +197,13 @@ database container configured for Throughput of 20,000 (RU/s). For this version,
 
 The next development step will attempt to spawn jobs to do synchronous bulk insertion in groups of 50.
 So 1,000 items would be 20 parallel jobs.  I'll post the stats once this is in place.
+
+# Architecture
+This Ax.Cosmos module is written in PowerShell and utilizes a combination of
+the [Cosmos REST APIs](https://docs.microsoft.com/en-us/rest/api/cosmos-db/)
+and the Azure [New-AzResource](https://docs.microsoft.com/en-us/powershell/module/az.resources/new-azresource)
+and related cmdlets. The design is not intended for high-performance use.
+
 
 ## Next Steps
 In no particular order:
@@ -237,6 +241,4 @@ cmdlets (Get-AzResource, New-AzResource, Remove-AzResource) and by calling Cosmo
 It is intended for casual use of Cosmos databases and would benefit from being implemented in C#.NET,
 particularly using the new Bulk executor module (https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview).
 **Any volunteers?** :blush:
-
-
 
