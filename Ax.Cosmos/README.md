@@ -178,7 +178,7 @@ into its own issues. Some observations:
 
 * The Cosmos REST API only allows a single document to be synchronously added at a time. 
 There doesn't appear to be any API to allow multiple documents to be created at once.
-The .NET team has created a bulk executor library for Cosmos: https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview
+The .NET team has created a bulk executor library for Cosmos 
 but this 1st cut of the module is itself in powershell so cannot yet take advantage. 
 
 * The **Invoke-RestMethod** cmdlet has an unexplainable lag, as if the requests are being serialized.
@@ -233,5 +233,9 @@ This is a known issue in that the underlying API does not return the location fo
 ### Implementation Notes
 This module is itself implemented in PowerShell using a combination of the Azure **AzResource**
 cmdlets (Get-AzResource, New-AzResource, Remove-AzResource) and by calling Cosmos REST APIs directly. 
-It is intended for casual use of Cosmos databases and would benefit from being implemented in C#.NET.
+It is intended for casual use of Cosmos databases and would benefit from being implemented in C#.NET,
+particularly using the new Bulk executor module (https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview).
+**Any volunteers?** :blush:
+
+
 
