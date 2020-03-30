@@ -14,12 +14,13 @@ collection / container name, and the partition key name associated with the coll
 The **New-AxCosmosContext** cmdlet is used to create a new context.
 When creating a new Cosmos account with **New-AxCosmosAccount**, a context will also be return
 but it will be necessary to then create a database and container before Cosmos documents can be added.
-Use **Select-AxCosmosDatabaseCollection** to switch between collections (contgainers) within the selected database.
+Use **Select-AxCosmosDatabaseCollection** to switch between collections (containers) within the selected database.
 
 The **New-AxCosmosAccount** and **New-AxCosmosDatabase** cmdlets can take up to 10 minutes to complete.
-All cmdlets are synchronous in this module version (so you just have to wait for the cmdlet to complete). Given the length of
-time, these cmdlets will output a warning (which can be supressed with the -WarningAction switch) about the time it will take.
-The -Verbose switch can be used to display the actual time taken.
+All cmdlets are synchronous in this module version (so you just have to wait for the cmdlet to complete),
+except for **New-AxCosmoBulkDocuments** which has an **-Async** option (currently under development; not recommended at this time).
+Given the length of time for account, database, and collection creation, the respective cmdlets will output a warning
+about the time it will take (which can optionally be supressed with the -WarningAction switch).
 
 ## Cmdlets
 This module provides the following commands:
