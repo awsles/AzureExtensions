@@ -178,24 +178,18 @@ if ($CosmosInsertList.Count -gt 0)
 
 write-progress -Activity $Activity -PercentComplete 100 -Completed
 
-# Output progress to console
-$ElapsedTime = (Get-Date) - $StartTime
-write-host -ForegroundColor Gray "Elapsed Time: $ElapsedTime"
-
-
-
-Write-Progress -Activity $Activity -PercentComplete 100 -Completed
-
 # +=================================================================================================+
 # |  WRAP-UP																						|
 # +=================================================================================================+
 
 $ElapsedTime = (Get-Date) - $StartTime
-write-host -ForegroundColor Yellow "`nSTATISTICS:"
+write-host -ForegroundColor Yellow "STATISTICS:"
 write-host "Document Count :  $Count"
 write-host "Bulksize       :  $Bulksize"
 write-host "NoAsync        :  $NoAsync"
 write-host "Elapsed Time   :  $ElapsedTime"
 write-host "Cosmos Time    :  $CosmosTime" 
+write-host "Time per Item  :  $([Math]::Round($CosmosTime.TotalSeconds / $Count, 2)) Seconds"
+
 
 
