@@ -41,6 +41,8 @@ This module provides the following commands
 | Remove-AxCosmosDocument | Delete an existing Cosmos document by id. |
 | Select-AxCosmosDatabaseCollection | Select the Cosmos database and collection (container) to use. |
 
+At this time, there is no programmatic way (that I am aware of) to *retrieve* the configuration for containers (i.e., the RUs).
+
 ### Documentation
 The cmdlets are documented in the [https://github.com/lesterw1/AzureExtensions/blob/master/Ax.Cosmos/Ax.Cosmos.md](Ax.Cosmos.md) page in this repository.
 
@@ -180,6 +182,21 @@ The .NET team has created a bulk executor library for Cosmos: https://docs.micro
 but this 1st cut of the module is itself in powershell so cannot yet take advantage. 
 
 * The **Invoke-RestMethod** cmdlet has an unexplainable lag, as if the requests are being serialized.
+
+Some benchmarks using Ax.Cosmos and the **Test-BulkInsert.ps1** script for insertion of 1,000 items with a
+database container configured for Throughput of 20,000 (RU/s). For this version, the concurrent jobs is set to 50.
+
+# Cosmos is configured for 20,000 RU/Sec Throughput 
+
+| BulkSize | Async | Elapsed Time | Cosmos Time | Time per Item |
+| --- | --- | --- | --- |--- | --- |
+| 50 | False | 00:01:42.7553027 | 00:01:34.8130316 | 0.095 Seconds |
+| 100 | False | 00:01:42.1512901 | 00:01:34.5813155 | 0.095 Seconds |
+| 200 | False | 00:01:41.7932899 | 00:01:34.2697490 | 0.094 Seconds |
+| 50 | True | 00:05:37.5189992 | 00:05:28.0603363 | 0.328 Seconds |
+| 100 | True | 00:03:16.4224028 | 00:03:06.3761100 | 0.186 Seconds |
+| 200 | True | 00:05:46.4596323 | 00:05:36.9803734 | 0.337 Seconds |
+
 
 Bottom line: If you have a lot of data to insert/update, you may need to develop your own solution.
 But if you happy with some lightweight use, this library is acceptable.
