@@ -149,13 +149,10 @@ for ($i = 1; $i -le $Count; $i++)
 	if (($i % 50) -eq 0)
 	{
 		write-verbose "Calling New-AxCosmosBulkDocuments..."
-		$TimeTaken = Measure-Command `
-		{
-			if ($NoAsync)
-				{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks }
-			else
-				{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async }
-		}
+		if ($NoAsync)
+			{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks  } }
+		else
+			{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async } }
 		$CosmosTime += $TimeTaken; $TimeTakenTxt = $TimeTaken -f "ss"
 		$CosmosInsertList = @()
 	}
@@ -165,13 +162,10 @@ for ($i = 1; $i -le $Count; $i++)
 if ($CosmosInsertList.Count -gt 0)
 {
 	write-progress -Activity $Activity -PercentComplete $pctComplete -Status "Writing remaining entries"
-	$TimeTaken = Measure-Command `
-	{
-		if ($NoAsync)
-			{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks  }
-		else
-			{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async }
-	}
+	if ($NoAsync)
+		{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks  } }
+	else
+		{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async } }
 	$CosmosTime += $TimeTaken; $TimeTakenTxt = $TimeTaken -f "ss"
 	$CosmosInsertList = @()
 }
