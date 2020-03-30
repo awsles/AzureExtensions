@@ -5,11 +5,21 @@
 .DESCRIPTION
 	This script generates a simple set of records and then calls New-AxCosmosBulkDocuments
 	to create/update the records in a cosmos database.
+
+.PARAMETER Count
+	Indicates the count of items to create. Default is 1000.
+
+.PARAMETER Bulksize
+	Indicates how many items to create in one call to New-AxCosmosBulkDocuments. Default is 50.
+	
+.PARAMETER NoAsync
+	Indicates that -Async is NOT to be used in New-AxCosmosBulkDocuments.
+	This provides a way to test synchronous calling.
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.02
-	Date: 29-Mar-20
+	Version: v0.03
+	Date: 30-Mar-20
 
 .LINK
 	https://docs.microsoft.com/en-us/azure/cosmos-db/bulk-executor-overview
@@ -21,7 +31,10 @@
 # +=================================================================================================+
 [cmdletbinding()]   #  Add -Verbose support; use: [cmdletbinding(SupportsShouldProcess=$True)] to add WhatIf support
 Param (
-	[Parameter(Mandatory=$false)] [int] $Count = 1000			# Write out Cosmos DB
+	[Parameter(Mandatory=$false)] [int] $Count = 1000,			# Write out Cosmos DB
+	[Parameter(Mandatory=$false)] [int] $Bulksize = 50,			# How many to call New-AxCosmosBulkDocuments with
+	[Parameter(Mandatory=$false)] [switch] $NoAsync
+	
 )
 
 
@@ -30,6 +43,7 @@ Param (
 # +=================================================================================================+
 Import-Module -Name Ax.Cosmos
 Add-Type -AssemblyName System.Web
+
 
 # +=================================================================================================+
 # |  CLASSES																						|
@@ -46,11 +60,15 @@ class TESTRECORD
 # |  TEST CONSTANTS 																				|
 # +=================================================================================================+
 $Cosmos_Location				= 'West Europe'	
-$Cosmos_ResourceGroupName		= 'rg-XXXXXX'
-$Cosmos_AccountName				= 'XXXXXXX'					# Must be globally unique name and lower case  **CUSTOMIZE ME**
+$Cosmos_ResourceGroupName		= 'rg-iotmeta'
+$Cosmos_AccountName				= 'iotmeta'					# Must be globally unique name and lower case  **CUSTOMIZE ME**
 $Cosmos_databaseName 			= 'database1'
 $Cosmos_partitionKeyName		= '_partitionKey'			# Name of property that we will use for consistent partition key names
 $Cosmos_CollectionName 			= 'MyCollection'
+
+# LW
+$Cosmos_CollectionName 			= 'Columns'
+
 
 
 # +=================================================================================================+
@@ -59,11 +77,15 @@ $Cosmos_CollectionName 			= 'MyCollection'
 
 # Import Word List (used to generate column names)
 write-host -ForegroundColor Yellow -NoNewLine "Reading wordlist.csv... "
-$wordlist = Import-Csv -Path wordlist.csv -Header Word -ErrorAction SilentlyContinue
+Try {
+	$wordlist = Import-Csv -Path wordlist.csv -Header Word -ErrorAction SilentlyContinue
+}
+Catch {
+	write-warning "wordlist.csv not found. Will proceed without it."  ; $wordlist = $null
+}
+
 if ($wordlist.count -gt 1)
 	{ write-host "OK" }
-else
-	{ write-warning "wordlist.csv not found. Will proceed without it."  ; $wordlist = $null }
 
 # Start time after we have imported data
 $startTime = Get-Date
@@ -127,7 +149,13 @@ for ($i = 1; $i -le $Count; $i++)
 	if (($i % 50) -eq 0)
 	{
 		write-verbose "Calling New-AxCosmosBulkDocuments..."
-		$TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async  }  # -DEBUG -Verbose
+		$TimeTaken = Measure-Command `
+		{
+			if ($NoAsync)
+				{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks }
+			else
+				{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async }
+		}
 		$CosmosTime += $TimeTaken; $TimeTakenTxt = $TimeTaken -f "ss"
 		$CosmosInsertList = @()
 	}
@@ -137,7 +165,13 @@ for ($i = 1; $i -le $Count; $i++)
 if ($CosmosInsertList.Count -gt 0)
 {
 	write-progress -Activity $Activity -PercentComplete $pctComplete -Status "Writing remaining entries"
-	$TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async }  # -DEBUG -Verbose
+	$TimeTaken = Measure-Command `
+	{
+		if ($NoAsync)
+			{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks  }
+		else
+			{ $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async }
+	}
 	$CosmosTime += $TimeTaken; $TimeTakenTxt = $TimeTaken -f "ss"
 	$CosmosInsertList = @()
 }
@@ -158,7 +192,9 @@ Write-Progress -Activity $Activity -PercentComplete 100 -Completed
 
 $ElapsedTime = (Get-Date) - $StartTime
 write-host -ForegroundColor Yellow "`nSTATISTICS:"
-write-host "Document Count : $Count"
+write-host "Document Count :  $Count"
+write-host "Bulksize       :  $Bulksize"
+write-host "NoAsync        :  $NoAsync"
 write-host "Elapsed Time   :  $ElapsedTime"
 write-host "Cosmos Time    :  $CosmosTime" 
 
