@@ -4,7 +4,8 @@
 	
 .DESCRIPTION
 	This script generates a simple set of records and then calls New-AxCosmosBulkDocuments
-	to create/update the records in a cosmos database.
+	to create/update the records in a cosmos database. Note that for the purposes of this
+	benchmark test, the -SkipChecks is enabled.
 
 .PARAMETER Count
 	Indicates the count of items to create. Default is 1000.
@@ -12,13 +13,13 @@
 .PARAMETER Bulksize
 	Indicates how many items to create in one call to New-AxCosmosBulkDocuments. Default is 50.
 	
-.PARAMETER NoAsync
-	Indicates that -Async is NOT to be used in New-AxCosmosBulkDocuments.
+.PARAMETER Async
+	Indicates that -Async is to be used in New-AxCosmosBulkDocuments.
 	This provides a way to test synchronous calling.
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.03
+	Version: v0.04
 	Date: 30-Mar-20
 
 .LINK
@@ -33,7 +34,7 @@
 Param (
 	[Parameter(Mandatory=$false)] [int] $Count = 1000,			# Write out Cosmos DB
 	[Parameter(Mandatory=$false)] [int] $Bulksize = 50,			# How many to call New-AxCosmosBulkDocuments with
-	[Parameter(Mandatory=$false)] [switch] $NoAsync
+	[Parameter(Mandatory=$false)] [switch] $Async
 	
 )
 
@@ -146,13 +147,13 @@ for ($i = 1; $i -le $Count; $i++)
 	$CosmosInsertList		+= $Entry
 
 	# At the threshold of 50, BULK insert
-	if (($i % 50) -eq 0)
+	if (($i % $BulkSize) -eq 0)
 	{
 		write-verbose "Calling New-AxCosmosBulkDocuments..."
-		if ($NoAsync)
-			{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks  } }
+		if ($Async)
+			{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async  } }
 		else
-			{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async } }
+			{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks } }
 		$CosmosTime += $TimeTaken; $TimeTakenTxt = $TimeTaken -f "ss"
 		$CosmosInsertList = @()
 	}
@@ -162,10 +163,10 @@ for ($i = 1; $i -le $Count; $i++)
 if ($CosmosInsertList.Count -gt 0)
 {
 	write-progress -Activity $Activity -PercentComplete $pctComplete -Status "Writing remaining entries"
-	if ($NoAsync)
-		{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks  } }
+	if ($Async)
+		{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async  } }
 	else
-		{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks -Async } }
+		{ $TimeTaken = Measure-Command { $d = New-AxCosmosBulkDocuments -Context $CosmosContext -Upsert -Object $CosmosInsertList -SkipChecks } }
 	$CosmosTime += $TimeTaken; $TimeTakenTxt = $TimeTaken -f "ss"
 	$CosmosInsertList = @()
 }
@@ -180,10 +181,10 @@ $ElapsedTime = (Get-Date) - $StartTime
 write-host -ForegroundColor Yellow "STATISTICS:"
 write-host "Document Count :  $Count"
 write-host "Bulksize       :  $Bulksize"
-write-host "NoAsync        :  $NoAsync"
+write-host "Async          :  $Async"
 write-host "Elapsed Time   :  $ElapsedTime"
 write-host "Cosmos Time    :  $CosmosTime" 
-write-host "Time per Item  :  $([Math]::Round($CosmosTime.TotalSeconds / $Count, 2)) Seconds"
+write-host "Time per Item  :  $([Math]::Round($CosmosTime.TotalSeconds / $Count, 3)) Seconds"
 
 
 
