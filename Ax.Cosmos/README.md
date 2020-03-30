@@ -229,6 +229,8 @@ Provide a "simple" mode along side the more complex query mode.
 * Fill in *location* property in AxCosmosContext Object. 
 This is a known issue in that the underlying API does not return the location for some unknown reason.
 
+* Figure out how to *retrieve* the current throughput (RU/Sec) for a database container.
+
 ### Implementation Notes
 This module is itself implemented in PowerShell using a combination of the Azure **AzResource**
 cmdlets (Get-AzResource, New-AzResource, Remove-AzResource) and by calling Cosmos REST APIs directly. 
