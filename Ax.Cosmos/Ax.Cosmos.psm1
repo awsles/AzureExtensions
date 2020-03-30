@@ -16,8 +16,8 @@
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.08
-	Date: 29-Mar-20
+	Version: v0.09
+	Date: 30-Mar-20
 	
 	Place module in one of the folders in: ($env:PSModulePath -split ';')
 	
@@ -1091,7 +1091,7 @@ Function Remove-AxCosmosDocument {
 
 	# https://stackoverflow.com/questions/35986647/how-do-i-get-the-body-of-a-web-request-that-returned-400-bad-request-from-invoke
 	try {
-		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON -Debug # -Verbose -Debug # -ErrorVariable WebError
+		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $JSON -UseBasicParsing # -Verbose -Debug # -ErrorVariable WebError
     }
    catch [System.Net.WebException] {
 		# Below helps us get the REAL error reason instead of the 400 error
@@ -1182,7 +1182,7 @@ $query=@"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 	
 	try {
-		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $query -UseBasicParsing -Verbose -Debug # -Verbose -Debug # -ErrorVariable WebError
+		$result = Invoke-WebRequest -Method $Verb -ContentType $contentType -Uri $queryUri -Headers $header -Body $query -UseBasicParsing -Verbose # -Verbose -Debug # -ErrorVariable WebError
     }
     catch [System.Net.WebException] {
 		# Below helps us get the REAL error reason instead of the 400 error
