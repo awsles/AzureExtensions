@@ -197,9 +197,8 @@ database container configured for Throughput of 20,000 (RU/s). For this version,
 | 100 | True | 00:03:16.4224028 | 00:03:06.3761100 | 0.186 Seconds |
 | 200 | True | 00:05:46.4596323 | 00:05:36.9803734 | 0.337 Seconds |
 
-
-Bottom line: If you have a lot of data to insert/update, you may need to develop your own solution.
-But if you happy with some lightweight use, this library is acceptable.
+The next development step will attempt to spawn jobs to do synchronous bulk insertion in groups of 50.
+So 1,000 items would be 20 parallel jobs.  I'll post the stats once this is in place.
 
 ## Next Steps
 In no particular order:
