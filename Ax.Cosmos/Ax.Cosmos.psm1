@@ -40,7 +40,7 @@ $manifest = @{
     RootModule			= 'Ax.Cosmos.psm1' 
     Author				= 'Lester Waters'
 	ModuleVersion 		= '0.08'
-	Description			= 'PowerShell cmdlets which perform selected CosmosDB actions'
+	Description			= 'PowerShell cmdlets which perform selected Cosmos Database actions'
     PowerShellVersion	= '5.0'
 }
 # New-ModuleManifest @manifest
@@ -434,7 +434,7 @@ Function Get-AxCosmosDatabase {
 		-Name $resourceName 
 		
 	# https://docs.microsoft.com/en-us/rest/api/cosmos-db/databases
-	write-host -ForegroundColor Cyan -NoNewLine "`nChecking for database '$databaseName'... "
+	write-verbose -ForegroundColor Cyan -NoNewLine "Get-AxCosmosDatabase: Checking for database '$databaseName'... "
 	$Endpoint		= $Context.endPoint
 	$dateTime		= [DateTime]::UtcNow.ToString("r").ToLowerInvariant()
 	$Verb			= "GET"
