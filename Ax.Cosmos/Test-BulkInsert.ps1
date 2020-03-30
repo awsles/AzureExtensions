@@ -179,6 +179,9 @@ write-progress -Activity $Activity -PercentComplete 100 -Completed
 
 $ElapsedTime = (Get-Date) - $StartTime
 write-host -ForegroundColor Yellow "STATISTICS:"
+write-host "Test Timestamp :  $(Get-Date)"
+write-host "Ax.Cosmos      :  v$((get-module -Name 'Ax.Cosmos').Version)"
+write-host "Throughput     :  _______ (RU/s)"		# PLACEHOLDER - We cannot dynamically retreive this yet
 write-host "Document Count :  $Count"
 write-host "Bulksize       :  $Bulksize"
 write-host "Async          :  $Async"
