@@ -22,7 +22,7 @@ time, these cmdlets will output a warning (which can be supressed with the -Warn
 The -Verbose switch can be used to display the actual time taken.
 
 ## Cmdlets
-This module provides the following commands
+This module provides the following commands:
 
 | Cmdlet | Description |
 | --- | --- |
@@ -188,8 +188,8 @@ database container configured for Throughput of 20,000 (RU/s). For this version,
 
 # Cosmos is configured for 20,000 RU/Sec Throughput 
 
-| BulkSize | Async | Elapsed Time | Cosmos Time | Time per Item |
-| --- | --- | --- | --- |--- | --- |
+| **BulkSize** | **Async** | **Elapsed Time** | **Cosmos Time** | **Time per Item** |
+| --- | --- | --- | --- |--- |
 | 50 | False | 00:01:42.7553027 | 00:01:34.8130316 | 0.095 Seconds |
 | 100 | False | 00:01:42.1512901 | 00:01:34.5813155 | 0.095 Seconds |
 | 200 | False | 00:01:41.7932899 | 00:01:34.2697490 | 0.094 Seconds |
