@@ -181,7 +181,8 @@ There doesn't appear to be any API to allow multiple documents to be created at 
 The .NET team has created a bulk executor library for Cosmos 
 but this 1st cut of the module is itself in powershell so cannot yet take advantage. 
 
-* The **Invoke-RestMethod** cmdlet has an unexplainable lag, as if the requests are being serialized.
+* The PowerShell **Invoke-RestMethod** cmdlet has an unexplainable lag, as if the requests are being serialized.
+In fairness, this could be resolved by re-implementing this module in C#.
 
 Some benchmarks using Ax.Cosmos and the **Test-BulkInsert.ps1** script for insertion of 1,000 items with a
 database container configured for Throughput of 20,000 (RU/s). For this version, the concurrent jobs is set to 50.
@@ -234,6 +235,8 @@ Provide a "simple" mode along side the more complex query mode.
 This is a known issue in that the underlying API does not return the location for some unknown reason.
 
 * Figure out how to *retrieve* the current throughput (RU/Sec) for a database container.
+
+* C# .NET implementation... any volunteers?
 
 ### Implementation Notes
 This module is itself implemented in PowerShell using a combination of the Azure **AzResource**
