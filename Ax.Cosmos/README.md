@@ -176,7 +176,7 @@ Achieving decent performance is challenging. Event with 20,000 RUs configured, a
 I attempted to improve this by spawning jobs for calling the Cosmos REST API via Invoke-WebRequest, but even this ran
 into its own issues. Some observations:
 
-* The Cosmos REST API only allows a single document to be synchronously added at a time. 
+* LIMITATION: The Cosmos REST API [here](https://docs.microsoft.com/en-us/rest/api/cosmos-db/documents) only allows a single document to be synchronously added at a time. 
 There doesn't appear to be any API to allow multiple documents to be created at once.
 The .NET team has created a bulk executor library for Cosmos 
 but this 1st cut of the module is itself in powershell so cannot yet take advantage. 
