@@ -18,8 +18,8 @@
 	The tags are in the form:   "[days] HH:MM" where 'HH:MM' is the time (UTC) and 'days'
 	(optional) may be either "Weekdays", "Daily", or include the application three-letter
 	weekday names (e.g., "Mon,Wed,Fri"). For example, "Mon,Tue,Fri 08:30" will apply to
-	Mondays, Tuesdays, and Fridays 08:30 AM UTC.  There is no option at this time to have
-	a different schedule per weekday.  IMPORTANT: Time is 24 hour UTC ONLY!
+	Mondays, Tuesdays, and Fridays 08:30 AM UTC.  Multiple schedules may be specified by
+	separating each with a semicolon (e.g., "Weekdays 08:00;Sat,Sun 10:30").
 	
 	The AutoStop time must be at least 30 minutes after the AutoStart time.  To have a VM
 	run from Monday 8am to Wed 5pm, specify AutoStart="Mon 08:00" and AutoStop="Wed 17:00".
@@ -45,12 +45,13 @@
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.51
-	Date: 21-May-20
+	Version: v0.53
+	Date: 22-May-20
 	
 	There is a 1 to 2 minute lag between updating a VM's tag and its propagation to the Azure Graph.
 	
 .LINK
+	https://docs.microsoft.com/en-us/azure/automation/automation-solution-vm-management-config   (terrible solution)
 
 
 #>
@@ -87,41 +88,58 @@ $GraceStop		= 5		# Grace period in minutes where VM can be stopped early
 
 
 # +=================================================================================================+
+# |  MODULES																						|
+# +=================================================================================================+
+Import-Module -Name Az.Accounts
+Import-Module -Name Az.Compute
+
+# +=================================================================================================+
 # |  FUNCTIONS																						|
 # +=================================================================================================+
-#
-# Ensure we are within the time window 
+
+# Is-WithinTimeWindow()
+# Ensure we are within the time window given a timespec such as "Mon,Web 18:00; Tue,Thu 20:15"
+# Known Issue: If script is run just before midnight, then it may fail the day of week match.
+# TEST
+#   Is-WithinTimeWindow -Verbose -WindowStart (get-date).AddHours(-1) -WindowEnd (Get-Date).AddHours(1) -InputTag 'Thu 11:55'
+#   $WindowStart = (Get-Date).AddHours(-1) ; $WindowEnd = (Get-Date).AddHours(2) ; $InputTag = 'Thu 11:55'
 #
 function Is-WithinTimeWindow
 {
     param (
         [Parameter(Mandatory = $true)] [datetime] $WindowStart,
-        [Parameter(Mandatory = $true)] [datetime] $WindowStop,
+        [Parameter(Mandatory = $true)] [datetime] $WindowEnd,
 		[Parameter(Mandatory = $true)] [string]   $InputTag	
+		# $ThisWeekDay = Global Input -- day of week as 3 letters in lower case
     )
+	
+	# write-verbose "  Is-WithinTimeWindow?  -WindowStart '$($WindowStart)'  -WindowEnd '$($WindowEnd)' -InputTag '$InputTag'"   # DEBUG
 
-	if ($InputTag.Contains(":"))
+	# Loop through the different time specifications, separated by semi-colon (;)
+	$TimeSpecs = @($InputTag -Split ';')
+	foreach ($ts in $TimeSpecs)
 	{
-		# Now See if we match on the weekday
-		if ($InputTag.ToLower().Contains("daily") -Or $InputTag.ToLower().Replace("weekdays", "mon,tue,wed,thu,fri").Contains($ThisWeekday) -or !($InputTag.Contains(" ")))
-		{
-			# Now check if we have a timeframe match			
-			$timeString = $InputTag.SubString($InputTag.IndexOf(":")-2,5).Trim()
-			$time = [datetime]::parse($InputTag.SubString($InputTag.IndexOf(":")-2,5).Trim())
-			if ($WhatIf) { Write-host -ForegroundColor Yellow -NoNewLine ("  Is-WithinTimeWindow?  " + $WindowStart.TimeOfDay + "   " +  $time.TimeOfDay + "  " + $WindowStop.TimeOfDay) }
-			# if ($time.TimeOfDay -ge $WindowStart.TimeOfDay -And $time.TimeOfDay -le $WindowStop.TimeOfDay)   # Doesn't handle MIDNIGHT properly
-			if ($time -ge $WindowStart -And $time -le $WindowStop)
-			{
-				if ($WhatIf) { Write-host -ForegroundColor Yellow " - TRUE!" }
-				return $true
-			}
-		}
+		# Separate the weekday names from the time
+		$Parts = @($ts -Split ' ')
+		$T = @($Parts | Where-Object {$_.Contains(':')} )
+		if (!$T)
+			{ write-Error "Invalid InputTag '$InputTag' in Is-WithinTimeWindow()" ; return $false }
+			
+		# Check specified time
+		$time = [datetime]::parse($T.Trim())
+		if ($time -lt $WindowStart -Or $time -gt $WindowEnd)
+			{ break }  # We are outside the time window, so try the next entry
+		
+		# We are inside the time window but are we in the right day of the week?
+		$days = (@($Parts | Where-Object {$_.Contains(':') -eq $False}) -Join ',')	 # Bring back together if there were spaces
+		if ($days.Length -eq 0)
+			{ return $true }
+		elseif (($days.ToLower().Contains("daily") -Or $days.ToLower().Replace("weekdays", "mon,tue,wed,thu,fri").Contains($ThisWeekday)))
+			{ return $true }
 	}
-	if ($WhatIf) { Write-host -ForegroundColor Yellow " - FALSE" }
 	return $false
 }
 
-# /subscriptions/23d6e98b-d73d-476e-8381-1faf272fd0f4/resourceGroups/azwe-rg-SecurityAutomation/providers/Microsoft.Compute/virtualMachines/azwe-p-security
 
 # +=================================================================================================+
 # |  SCRIPT BLOCKS																					|
@@ -283,7 +301,7 @@ foreach ($vm in ($ApplicableVMs | Sort-Object -Property subscriptionId,name))
 		{ $VMCount++ ; write-verbose "Checking: $($vm.Name)  $($vm.ResourceGroup)  $($vm.Location)  $($vm.PowerState) - AUTOSTART: $($vm.AutoStart)   AUTOSTOP: $($vm.AutoStop)" }
 
 	# Check on AUTOSTART
-	if ($vm.AutoStart -And (Is-WithinTimeWindow -WindowStart $StartupGrace -WindowStop $GraceEndTime -InputTag $vm.AutoStart))
+	if ($vm.AutoStart -And (Is-WithinTimeWindow -WindowStart $StartupGrace -WindowEnd $GraceEndTime -InputTag $vm.AutoStart))
 	{
 		# We need to START this VM!
 		if ($WhatIf)
@@ -344,7 +362,7 @@ foreach ($vm in ($ApplicableVMs | Sort-Object -Property subscriptionId,name))
 	}
 	
 	# Now check on AUTOSTOP - Don't stop a VM we just started due to a small time window either
-	if ($vm.AutoStop -And !$VMStarted -And (Is-WithinTimeWindow -WindowStart $ShutdownGrace -WindowStop $GraceEndTime -InputTag $vm.AutoStop))
+	if ($vm.AutoStop -And !$VMStarted -And (Is-WithinTimeWindow -WindowStart $ShutdownGrace -WindowEnd $GraceEndTime -InputTag $vm.AutoStop))
 	{
 		# We need to STOP this VM!
 		if ($WhatIf)

@@ -17,8 +17,9 @@ If there is a match on the time window, the VM will be started or stopped, respe
 The tag values are in the form:   "[days] HH:MM" where 'HH:MM' is the time (UTC) and 'days'
 (optional) may be either "**Weekdays**", "**Daily**", or include the application three-letter
 weekday names (e.g., "**Mon,Wed,Fri**"). For example, "**Mon,Tue,Fri 08:30**" will apply to
-Mondays, Tuesdays, and Fridays 08:30 AM UTC.  There is no option at this time to have
-a different time per weekday. Note that the time is always 24 hour UTC!
+Mondays, Tuesdays, and Fridays 08:30 AM UTC.  Multiple schedules may be specified by
+separating each with a semicolon (e.g., "Weekdays 08:00;Sat,Sun 10:30").
+Note that the time is always 24 hour UTC!
 
 The AutoStop time must be at least 30 minutes after the AutoStart time.  To have a VM
 run from Monday 8am to Fri 6pm, specify AutoStart="Mon 08:00" and AutoStop="Frid 18:00".
