@@ -45,8 +45,8 @@
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.53
-	Date: 22-May-20
+	Version: v0.54
+	Date: 12-Jun-20
 	
 	There is a 1 to 2 minute lag between updating a VM's tag and its propagation to the Azure Graph.
 	
@@ -69,9 +69,9 @@ param(
 # +=================================================================================================+
 # |  CUSTOMIZATIONS     (customize these values for your subscription and needs)					|
 # +=================================================================================================+
-$TenantId 				= "a603898f-7de2-45ba-b67d-d35fb519b2cf" 			# centricaplc.onmicrosoft.com
-$CertificateThumbprint 	= 'BDF35E35AAAFCFC3CB46A1A8BDCFFB4D34737700'		# Certificate Thumbprint for login (if empty, uses current context)
-$ApplicationId 			= '55a38a2d-d58c-4abf-b3c6-d06f964ad79e' 			# APplicationID associated with Certificate for login (if empty, uses current context)
+$TenantId 				= "00000000-0000-0000-0000-000000000000" 		# YOURDOMAIN.onmicrosoft.com
+$CertificateThumbprint 	= 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'				# Certificate Thumbprint for login (if empty, uses current context)
+$ApplicationId 			= 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' 				# ApplicationID associated with Certificate for login (if empty, uses current context)
 
 
 # +=================================================================================================+
