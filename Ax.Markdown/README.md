@@ -22,11 +22,7 @@ directly from each cmdlet's help section.
 ## Getting Started
 The following steps will help you get started:
 
-1) Install and import the Ax.Markdown module.  [NOT IMPLEMENTED AS A MODULE YET]
-
-```
-Import-Module Ax.Markdown
-```
+1) Install the single script **Get-MarkdownFromModule.ps1** within Ax.Markdown folder.
 
 2) Generate the Markdown for a module (in this example, for Az.Storage) and output it to a file:
 
