@@ -16,8 +16,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.03
-	Date: 07-Mar-20
+	Version: v0.04
+	Date: 15-Oct-20
 
 .EXAMPLE
 	.\New-MarkdownFromModule.ps1 -Module PowerShellforGithub | out-file C:\PowerShell_for_Github.md
@@ -35,7 +35,8 @@ Param (
 	[Parameter(Mandatory=$true)] [string] $Module
 )
 
-$MarkdownHeader = "# $Module`n`n| Cmdlet | Synopsis |`n| --- | --- |`n"
+$MarkdownHeader = "# Documentation for $Module`n`n| Cmdlet | Synopsis |`n| --- | --- |`n"
+$MarkdownFooter = "*This documentation summary was created using https://github.com/lesterw1/AzureExtensions/tree/master/Ax.Markdown cmdlet.*"
 $Markdown = ""
 
 # $module = "PowerShellforGithub"   # TEST
@@ -45,6 +46,7 @@ $Markdown = ""
 # +=================================================================================================+
 
 $Commands = Get-Command -Module $module
+
 
 foreach ($command in $Commands)
 {
@@ -103,5 +105,5 @@ foreach ($command in $Commands)
 	
 }
 
-return 	$($MarkdownHeader + "`n---`n" + $Markdown)
+return 	$($MarkdownHeader + "`n---`n" + $Markdown + "`n" + $MarkdownFooter + "`n" )
 
