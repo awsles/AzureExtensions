@@ -124,15 +124,6 @@ if ($MatchingVMs.Count -eq 1)
 	write-host -ForegroundColor Yellow -NoNewLine " in Resource Group "
 	write-host $MatchingVMs[0].resourceGroup
 	write-verbose "VM id: $($MatchingVMs[0].id)"
-	
-	if (!$Force)
-		{ $x = read-host "Type YES to confirm shutdown and deallocate:" }
-	if (($x -notlike "YES") -And !$Force)
-	{
-		write-host -ForegroundColor Yellow "Shutdown aborted."
-		Start-Sleep -Seconds 2
-		return;
-	}
 } 
 elseif (($MatchingVMs.Count -eq 0) -And ($CandidateVMs -eq 1))
 {
@@ -151,15 +142,6 @@ elseif (($MatchingVMs.Count -eq 0) -And ($CandidateVMs -eq 1))
 	write-host -ForegroundColor Yellow -NoNewLine " in Resource Group "
 	write-host $MatchingVMs[0].resourceGroup
 	write-verbose "VM id: $($MatchingVMs[0].id)"
-
-	if (!$Force)
-		{ $x = read-host "Type YES to confirm shutdown and deallocate:" }
-	if (($x -notlike "YES") -And !$Force)
-	{
-		write-host -ForegroundColor Yellow "Shutdown aborted."
-		Start-Sleep -Seconds 2
-		return;
-	}
 }
 else
 {
@@ -170,7 +152,7 @@ else
 	return $null
 }
 
-# If we get here, we are shutting the VM down...
+# MatchingVMs[0] has the VM to shutdown...
 $x = Get-AzSubscription -SubscriptionId $MatchingVMs[0].subscriptionId | Select-AzSubscription
 $vm = Get-AzVm -Name $MatchingVMs[0].Name -ResourceGroupName $MatchingVMs[0].resourceGroup
 $VMStatus = (Get-AzVm -Name $MatchingVMs[0].Name -ResourceGroupName $MatchingVMs[0].resourceGroup -Status).Statuses | Where-Object {$_.Code -like 'PowerState/*'}
@@ -178,7 +160,11 @@ write-host -ForegroundColor Green $VMStatus.DisplayStatus
 if ($VMStatus.Code -like 'PowerState/running') 
 {
 	write-host -ForegroundColor Yellow "Shutting down..."
-	$x = $vm | Stop-AzVm -NoWait
+	if ($Force)
+		{ $x = $vm | Stop-AzVm -NoWait -Force }
+	else
+		{ $x = $vm | Stop-AzVm -NoWait -Confirm }
+	Start-Sleep -Seconds 5
 }
 else
 {
@@ -188,4 +174,4 @@ else
 	return $null
 }
 
-Start-Sleep -Seconds 5
+
