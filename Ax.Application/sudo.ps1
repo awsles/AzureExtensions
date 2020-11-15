@@ -7,6 +7,8 @@
 	This cmdlet is used to elevate privileges to global admin when Azure Privileged Identity Management
 	has been enabled.
 	
+	THIS SCRIPT IS STILL UNDER DEVELOPMENT
+	
 .PARAMETER Force
 	If set, the user is not asked to confirm the shutdown.
 
@@ -15,6 +17,7 @@
 	Version: v0.01
 	Date: 15-Nov-20
 	
+	This requires the AzureAdPreview module:
 	Install-module AzureADPreview -AllowPrerelease -AllowClobber
 	
 
@@ -40,12 +43,8 @@ Import-Module AzureADPreview
 
 
 # +=================================================================================================+
-# |  CONSTANTS																						|
+# |  MAIN																							|
 # +=================================================================================================+
-$TenantId				= '**SET_THIS_FIRST**'			# Your Azure Tenant ID
-$CertificateThumbprint	= '**SET_THIS_FIRST**'			# Certificate Thumbprint for App Service Principal
-$ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service Principal
-
 
 $TenantId	= (get-azcontext).tenant.id
 if ($TenantId)
