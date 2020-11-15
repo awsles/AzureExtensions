@@ -28,8 +28,8 @@
 	If indicated along with update, the update is not performed but the processing leading up to it is.
 .NOTES
 	Author: Lester Waters
-	Version: v0.68
-	Date: 05-Jun-20
+	Version: v0.69
+	Date: 15-Nov-20
 	
 	TO DO: (1) Prompt to select an image (Kubernetes, general, etc.)
 	       (2) Set the Owner of the app (unless it is a Microsoft account)
@@ -342,11 +342,11 @@ if (!$UpdateCertificate)
 		
 	$RoleSelection	= @($NoServicePrincipalRole) + @($NoRoleAssignment) + `
 		(Get-AzRoleDefinition | Select-Object -Property Name, Id, IsCustom, Description | Where-Object {$_.Name -NotLike "Owner"} | Sort-Object -Property Name)
-	$RoleSelection	= ($RoleSelection  | out-GridView -Title "Choose a role option:" -Passthru)
+	$RoleSelection	= ($RoleSelection  | out-GridView -Title "Choose one or more role(s):" -Passthru)
 
-	if ($RoleSelection.Count -eq 0 -Or $RoleSelection.Count -gt 1)
+	if ($RoleSelection.Count -eq 0)
 	{
-		write-host -ForegroundColor Yellow "   You must choose one role option."
+		write-host -ForegroundColor Yellow "   You must choose at least one role option."
 		return
 	}
 	#elseif ($RoleSelection.Name.Contains("Owner"))
