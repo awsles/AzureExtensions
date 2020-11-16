@@ -17,8 +17,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.04
-	Date: 15-Nov-20
+	Version: v0.05
+	Date: 16-Nov-20
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -52,6 +52,12 @@ Import-Module Az.ResourceGraph
 $TenantId				= '**SET_THIS_FIRST**'			# Your Azure Tenant ID
 $CertificateThumbprint	= '**SET_THIS_FIRST**'			# Certificate Thumbprint for App Service Principal
 $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service Principal
+
+
+# +=================================================================================================+
+# |  LOGIN																						|
+# +=================================================================================================+
+
 
 
 # +=================================================================================================+
