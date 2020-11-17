@@ -49,6 +49,7 @@ Import-Module Az.ResourceGraph
 # +=================================================================================================+
 # |  CONSTANTS																						|
 # +=================================================================================================+
+# Service principal name is <<insert_name>>
 $TenantId				= '**SET_THIS_FIRST**'			# Your Azure Tenant ID
 $CertificateThumbprint	= '**SET_THIS_FIRST**'			# Certificate Thumbprint for App Service Principal
 $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service Principal
@@ -57,7 +58,9 @@ $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service P
 # +=================================================================================================+
 # |  LOGIN																						|
 # +=================================================================================================+
-
+write-host -ForegroundColor Yellow "Logging in..."
+Login-AzAccount -ServicePrincipal -CertificateThumbprint $CertificateThumbprint `
+				-TenantId $TenantId -ApplicationId $ApplicationId
 
 
 # +=================================================================================================+
