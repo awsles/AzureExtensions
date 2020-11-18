@@ -16,8 +16,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.04
-	Date: 15-Oct-20
+	Version: v0.06
+	Date: 17-Nov-20
 
 .EXAMPLE
 	.\New-MarkdownFromModule.ps1 -Module PowerShellforGithub | out-file C:\PowerShell_for_Github.md
@@ -35,18 +35,39 @@ Param (
 	[Parameter(Mandatory=$true)] [string] $Module
 )
 
-$MarkdownHeader = "# Documentation for $Module`n`n| Cmdlet | Synopsis |`n| --- | --- |`n"
-$MarkdownFooter = "*This documentation summary was created using https://github.com/lesterw1/AzureExtensions/tree/master/Ax.Markdown cmdlet.*"
+$timestamp = Get-Date ([datetime]::UtcNow) -Format "dddd MM/dd/yyyy HH:mm UTC"
+
+$MarkdownHeader = "# Documentation for $Module`nThis is the combined documentation for the $Module cmdlets.`n<br/>Last updated on $timestamp`n<br/><br/>`n`n| Cmdlet | Synopsis |`n| --- | --- |`n"
+$MarkdownFooter = "*This combined documentation page was created using https://github.com/lesterw1/AzureExtensions/tree/master/Ax.Markdown cmdlet.*"
 $Markdown = ""
 
 # $module = "PowerShellforGithub"   # TEST
 
-# +=================================================================================================+
-# |  LOOP	              																		|
-# +=================================================================================================+
 
+# +=================================================================================================+
+# |  LOOP through Helpfiles           																|
+# +=================================================================================================+
+$Helpfiles = get-help -name $module | Where {$_.Category -like 'Helpfile'} 
+
+if ($helpfiles)
+	{ $Markdown += "For additional help, type:`n" }
+	
+foreach ($helpfile in $Helpfiles)
+{
+	write-host -ForegroundColor Cyan "Helpfile: $($helpfile.Name)"
+	$help = Get-Help -Detailed -Name $helpfile.Name
+	
+	# TO DO: Embed the preformatted text returned by Get-Help.
+	# For now, just embed a reference to the helpfile page.
+	$Markdown += '```get-help ' + $helpfile.Name + '``` ' + "`n"
+}
+$Markdown += "`n"
+
+
+# +=================================================================================================+
+# |  LOOP through cmdlets           																|
+# +=================================================================================================+
 $Commands = Get-Command -Module $module
-
 
 foreach ($command in $Commands)
 {
@@ -97,11 +118,16 @@ foreach ($command in $Commands)
 	
 	# EXAMPLES
 	$Examples		= ($help.Examples | out-string).Trim()
+	# Handle lines in the examples with embedded hashtags at line starts
+	if ($Examples)
+		{ $Examples		= $Examples.Replace("`n# ", "`n#### ") }
+	
+	# Add to output
 	if ($Examples.Length -gt 10)
 		{ $Markdown 		+= "### Examples`n`n$Examples`n`n" }
 	
 	# ----
-	$Markdown		+= "---`n"
+	$Markdown		+= "`n`n---`n"
 	
 }
 
