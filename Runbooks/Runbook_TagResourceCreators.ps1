@@ -27,7 +27,7 @@
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.72
+	Version: v0.75
 	Date: 20-Nov-20
 	
 	TO DO:  If the ActivityLog is configured with a storage account, then optionally look back further
@@ -61,7 +61,6 @@ Import-Module Az.ResourceGraph
 $TenantId				= '**SET_THIS_FIRST**'			# Your Azure Tenant ID
 $CertificateThumbprint	= '**SET_THIS_FIRST**'			# Certificate Thumbprint for App Service Principal
 $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service Principal
-$ApplicationRole		= "Contributor"  				# Role that is required for this script to run in order to change TAGS
 
 # My INFO  [DO NOT SAVE THIS IN GITHUB]
 # Service principal name is App_Auditor
@@ -69,37 +68,24 @@ $ApplicationRole		= "Contributor"  				# Role that is required for this script t
 
 
 # +=================================================================================================+
-# |  GET TenantID  (only works if logged in or in runbook or AzureVM)								|
-# +=================================================================================================+
-if ($TenantId.Length -ne 36)
-	{ $TenantId = (Get-AzContext).Tenant.Id }
-if ($TenantId.Length -ne 36)
-{
-	# Find VM using AZURE Instance Metadata Service (IMDS) Endpoint
-	$TenantId			= (Invoke-RestMethod -TimeoutSec 10 -ErrorAction SilentlyContinue `
-								-Headers @{"Metadata"="true"} -UseBasicParsing -Method GET `
-								-Uri 'http://169.254.169.254/metadata/identity/info?api-version=2018-02-01').TenantId
-	if (!$TenantId -Or ($TenantId.Length -ne 36))
-	{
-		write-warning "Unable to dynamically determine TenantId."
-		# return
-	}
-}
-
-# +=================================================================================================+
 # |  LOGIN		              																		|
 # +=================================================================================================+
-# Use common Runbook_Login.ps1 if it exists
+# Use common Runbook_Login.ps1 if it exists.
 # This also sets various global varables such as: $Err1, $TenantId, $ReportStorageAccount, etc.
-if (test-path -path 'Runbook_Login.ps1')
+if ((Get-AzContext).Account.Id)
 {
-	write-output -ForegroundColor Yellow "Logging in with Runbook_Login.ps1..."
+	# We are already logged in.
+	write-output "Using logged in account ID $((Get-AzContext).Account.Id) ($(Get-AzContext).Account.Type)"
+}
+elseif (test-path -path 'Runbook_Login.ps1')
+{
+	write-output "Logging in with Runbook_Login.ps1..."
 	. ./Runbook_Login.ps1
 	if ($Err1) { write-host "Error returned in Runbook_Login.ps1 - exiting" ; return; }
 }
-elseif ($ApplicationId -And $ApplicationId.Length -eq 36)
+elseif (($ApplicationId -And $ApplicationId.Length -eq 36) -and ($CertificateThumbprint))
 {
-	write-output -ForegroundColor Yellow "Logging in with certificate..."
+	write-output "Logging in with certificate..."
 	Login-AzAccount -ServicePrincipal -CertificateThumbprint $CertificateThumbprint `
 					-TenantId $TenantId -ApplicationId $ApplicationId
 }
@@ -217,7 +203,7 @@ Function TagResources
 					{ $CreatedTime = $Tags[$CreatedTime] }
 				
 				$OriginalCreatedBy = "-Unknown-"  # DEBUG
-				write-verbose "PROCESSING: $($r.ResourceId)"
+				write-output "PROCESSING: $($r.ResourceId)"
 				
 				# NOTE: There are a lot of different resource types... many of which may not generate any event logs
 				# as they may be indirectly created, etc.  We will want to limit the resources that we tag to the most
@@ -278,7 +264,7 @@ Function TagResources
 					else
 					{
 						# update the tags (or add the property if it doesn't already exist)
-						write-verbose "    UPDATING --  CreatedBy: $CreatedBy    CreatedTime: $CreatedTime"
+						write-output "    ==>  CreatedBy: $CreatedBy    CreatedTime: $CreatedTime"
 					
 						# Create the new tags...
 						$Tags.Remove("CreationInfo")						# Remove LEGACY tag
@@ -345,7 +331,7 @@ $ScriptStart	= (Get-Date).ToUniversalTime()   # Execution start time for this sc
 # +-----------------------------------------------------------------+
 # | Process all ResourceContainers (1,000 at a time)				|
 # +-----------------------------------------------------------------+
-write-verbose "--- Processing ResourceContainers ---"
+write-output "--- Processing ResourceContainers ---"
 Do
 {
 	$Containers		= (Search-AzGraph -First 1000 -Query $KustoContainersWithoutCreatedBy) | Sort-Object -Property subscriptionId, name
@@ -358,7 +344,7 @@ until ($Containers.Count -lt 1000)
 # +-----------------------------------------------------------------+
 # | Process all Resources (1,000 at a time)							|
 # +-----------------------------------------------------------------+
-write-verbose "--- Processing Resources ---"
+write-output "--- Processing Resources ---"
 Do
 {
 	$Resources		= (Search-AzGraph -First 1000 -Query $KustoResourcesWithoutCreatedBy) | Sort-Object -Property subscriptionId, name
@@ -367,12 +353,8 @@ Do
 }
 until ($Resource.Count -lt 1000)
 
-# Remove any legacy tags
-$x = Remove-AzTag -Name "CreationInfo" -ErrorAction stop -ErrorVariable Err1			# Remove LEGACY
-$x = Remove-AzTag -Name "CreationTime" -ErrorAction stop -ErrorVariable Err1			# Remove LEGACY
-
 $Finish = (Get-Date).ToUniversalTime()
-write-output "TagResourceCreators Script finished at $Finish UTC - $UpdateCount update(s) performed."
+write-output "`nTagResourceCreators Script finished at $Finish UTC - $UpdateCount update(s) performed."
 $Results | Out-GridView -Title "Resource Owner Tags"
 
 return
