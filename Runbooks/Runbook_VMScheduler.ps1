@@ -45,14 +45,13 @@
 	
 .NOTES
 	Author: Lester Waters
-	Version: v0.54
-	Date: 12-Jun-20
+	Version: v0.57
+	Date: 21-Nov-20
 	
 	There is a 1 to 2 minute lag between updating a VM's tag and its propagation to the Azure Graph.
 	
 .LINK
 	https://docs.microsoft.com/en-us/azure/automation/automation-solution-vm-management-config   (terrible solution)
-
 
 #>
 
@@ -66,12 +65,28 @@ param(
 	[Parameter(Mandatory=$false)] [switch] $WhatIf  		= $false
 )
 
+
+# +=================================================================================================+
+# |  MODULES																						|
+# +=================================================================================================+
+Import-Module -Name Az.Accounts
+Import-Module -Name Az.Compute
+
+
 # +=================================================================================================+
 # |  CUSTOMIZATIONS     (customize these values for your subscription and needs)					|
 # +=================================================================================================+
 $TenantId 				= "00000000-0000-0000-0000-000000000000" 		# YOURDOMAIN.onmicrosoft.com
-$CertificateThumbprint 	= 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'				# Certificate Thumbprint for login (if empty, uses current context)
-$ApplicationId 			= 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' 				# ApplicationID associated with Certificate for login (if empty, uses current context)
+$CertificateThumbprint 	= 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'				# Certificate Thumbprint for App Service Principal
+$ApplicationId 			= 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' 				# ApplicationID for your App Service Principal
+$TenantName				= 'tenant.onmicrosoft.com'						# tenant name (.onmicrosoft.com)
+
+# My INFO  [DO NOT SAVE THIS IN GITHUB]
+# Service principal name is App_Auditor
+#$TenantId				= '64e67b02-e271-467d-b69c-392105c29915'			# cloudmail365.onmicrosoft.com
+#$CertificateThumbprint 	= 'ACA7AD6907B05438C1087AA562F8ADED1FF27A38'		# 
+#$ApplicationId 			= '15d9e263-166e-49bc-bc9f-30f3b263a49f'			# App_VMOperator
+#$TenantName					= 'cloudmail365.onmicrosoft.com'
 
 
 # +=================================================================================================+
@@ -88,10 +103,33 @@ $GraceStop		= 5		# Grace period in minutes where VM can be stopped early
 
 
 # +=================================================================================================+
-# |  MODULES																						|
+# |  LOGIN		              																		|
 # +=================================================================================================+
-Import-Module -Name Az.Accounts
-Import-Module -Name Az.Compute
+# TO DO: Clean this up...
+if ((Get-AzContext).Account.Id)
+{
+	# We are already logged in.
+	write-output "Using logged in account ID $((Get-AzContext).Account.Id) ($(Get-AzContext).Account.Type)"
+}
+elseif (($ApplicationId -And $ApplicationId.Length -eq 36) -and ($CertificateThumbprint))
+{
+	write-output "Logging in with certificate as AppId: $ApplicationId"
+	Login-AzAccount -ServicePrincipal -CertificateThumbprint $CertificateThumbprint `
+					-TenantId $TenantId -ApplicationId $ApplicationId
+}
+elseif (test-path -path 'Runbook_Login.ps1')
+{
+	# Use common Runbook_Login.ps1 if it exists (via 'Profile' automation variable)
+	# This also sets various global varables such as: $Err1, $TenantId, $ReportStorageAccount, etc.
+	write-output "Logging in with Runbook_Login.ps1..."
+	. ./Runbook_Login.ps1 -Profile 'VMOperator'
+	if ($Err1) { write-host "Error returned in Runbook_Login.ps1 - exiting" ; return; }
+}
+elseif ((get-AzSubscription -ErrorAction SilentlyContinue).Count -eq 0)
+{
+	$TenantId = (Login-AzAccount).TenantId
+}
+
 
 # +=================================================================================================+
 # |  FUNCTIONS																						|
@@ -172,6 +210,8 @@ $scriptBlockOLD = {
 	Write-Output "VM $Action completed for $VMName"
 }
 
+# This scriptblock is used to start the VM using the service principal.
+# But now, Start-AzVm has a NoWait option... So this may not be needed.
 # $ScriptBlock = [scriptblock]::Create($ScriptBlockText)
 $scriptBlockText = '{
      param ([string]$Id, [string]$VMName, [string]$Action)
@@ -234,18 +274,6 @@ $Error.Clear()
 
 
 # +=================================================================================================+
-# | LOGIN (if we are not logged in already)															|
-# +=================================================================================================+
-$c = Get-AzContext -ErrorAction SilentlyContinue		# Are we logged in already?
-if ($c -eq $null -Or $c.Subscription -eq $null -Or $c.Subscription.Id -eq $null)
-{
-	# Certificate-based Login
-	write-verbose "Logging in as AppId: $ApplicationId"
-	Login-AzAccount -TenantId $TenantId -ServicePrincipal -CertificateThumbprint $CertificateThumbprint -ApplicationId $ApplicationId -ErrorAction Stop -Verbose 
-}
-
-
-# +=================================================================================================+
 # | Query for all VMs containing an AutoStart or AutoStop tag (or both)	using Resource Graph		|
 # | Results are joined with subscription name for logging purposes.									|
 # +=================================================================================================+
@@ -264,18 +292,18 @@ $KustoQuery = "Resources
 	hostId = tostring(properties.host.id), 
 	AutoStart,AutoStop,AutoStopWebhook,tags,properties, id"
 
-# Query for applicable VMs up to 5000 at a time (max allowed by query)
+# Query for applicable VMs up to 1000 at a time (5000 is max allowed by query)
 $SkipCount = 0
 Do 
 {	# Search-AzGraph doesn't like a -SkipCount of zero
 	if ($SkipCount -eq 0)
-		{ $r = Search-AzGraph -query $KustoQuery -First 5000 } # -ErrorAction SilentlyContinue
+		{ $r = Search-AzGraph -query $KustoQuery -First 1000 } # -ErrorAction SilentlyContinue
 	else
-		{ $r = Search-AzGraph -query $KustoQuery -First 5000 -Skip $SkipCount } # -ErrorAction SilentlyContinue
+		{ $r = Search-AzGraph -query $KustoQuery -First 1000 -Skip $SkipCount } # -ErrorAction SilentlyContinue
 	$ApplicableVMs += ,$r
-	$SkipCount += 5000
+	$SkipCount += 1000
 }
-Until ($r.Count -lt 5000)
+Until ($r.Count -lt 1000)
 
 if ($ApplicableVMs.Count -eq 0)
 {
