@@ -28,8 +28,8 @@
 	If indicated along with update, the update is not performed but the processing leading up to it is.
 .NOTES
 	Author: Lester Waters
-	Version: v0.69
-	Date: 15-Nov-20
+	Version: v0.70
+	Date: 20Nov-20
 	
 	TO DO: (1) Prompt to select an image (Kubernetes, general, etc.)
 	       (2) Set the Owner of the app (unless it is a Microsoft account)
@@ -62,9 +62,9 @@ Param (
 #
 # Verify the length and that there are no spaces in the PFX Password
 #
-if (($PFXPassword.Length -gt 0) -And ($PFXPassword.Contains(" ") -Or $PFXPassword.Length -lt 8))
+if (($PFXPassword.Length -gt 0) -And ($PFXPassword.Contains(" ") -Or $PFXPassword.Length -lt 12 ))
 {
-	write-host -ForegroundColor Red " PFX Password may NOT contain any spaces and must be at least 8 characters!"
+	write-host -ForegroundColor Red " PFX Password may NOT contain any spaces and must be at least 12 characters!"
 	return
 }
 
@@ -273,14 +273,14 @@ $endDate	= (Get-Date -Hour 0 -Minute 00 -Second 00 -Day 31 -Month 12).AddYears(2
 
 
 # Ensure we have a PFX password
-if ($PFXPassword -eq "") { $PFXPassword = New-SWRandomPassword -MinPasswordLength 8 -MaxPasswordLength 12}
+if ($PFXPassword -eq "") { $PFXPassword = New-SWRandomPassword -MinPasswordLength 12 -MaxPasswordLength 16 }
 
 # +-------------------------------------+
 # |  Set our TenantID					|
 # +-------------------------------------+
 $Tenants = @(Get-AzTenant)
 $TenantID = $Tenants[0].Id
-write-host -ForegroundColor Yellow "`n*** Tenant is $($Tenants[0].Directory)  ($TenantID) ***`n"
+write-host -ForegroundColor Yellow "`n*** Tenant is $($Tenants[0].Name)  ($TenantID) ***`n"
 
 #
 # Retrieve our startup directory and set our current
