@@ -16,11 +16,13 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.06
-	Date: 17-Nov-20
+	Version: v0.07
+	Date: 22-Nov-20
+	
+	TO DO: Make this a function.
 
 .EXAMPLE
-	.\New-MarkdownFromModule.ps1 -Module PowerShellforGithub | out-file C:\PowerShell_for_Github.md
+	.\New-MarkdownFromModule.ps1 -Module PowerShellforGithub | out-file -FilePath C:\PowerShell_for_Github.md -Encoding utf8
 
 .LINK
 	https://docs.microsoft.com/en-us/powershell/scripting/samples/redirecting-data-with-out---cmdlets?view=powershell-7
@@ -47,7 +49,7 @@ $Markdown = ""
 # +=================================================================================================+
 # |  LOOP through Helpfiles           																|
 # +=================================================================================================+
-$Helpfiles = get-help -name $module | Where {$_.Category -like 'Helpfile'} 
+$Helpfiles = get-help -name $module -ErrorAction SilentlyContinue | Where {$_.Category -like 'Helpfile'} 
 
 if ($helpfiles)
 	{ $Markdown += "For additional help, type:`n" }
@@ -67,7 +69,12 @@ $Markdown += "`n"
 # +=================================================================================================+
 # |  LOOP through cmdlets           																|
 # +=================================================================================================+
-$Commands = Get-Command -Module $module
+$Commands = Get-Command -Module $module | Sort-Object -Property Name
+if (!$Commands)
+{
+	write-warning "No commands found in module '$module'"
+	return
+}
 
 foreach ($command in $Commands)
 {
@@ -86,7 +93,7 @@ foreach ($command in $Commands)
 	
 	# Synopsis
 	$Synopsis		= ($help.synopsis | out-string).Trim()
-	$Markdown 		+= "### Synopsis`n`n$Synopsis`n`n"
+	$Markdown 		+= "### Synopsis`n$Synopsis`n`n"
 	
 	# Add in a table of contents entry
 	$SynopsisClean	= ($help.synopsis | out-string).Trim().Replace("`n",'')
@@ -94,11 +101,11 @@ foreach ($command in $Commands)
 
 	# Syntax
 	$Syntax			= ($help.syntax | out-string).Trim()
-	$Markdown 		+= "### Syntax`n`n$Syntax`n`n"
+	$Markdown 		+= "### Syntax`n$Syntax`n`n"
 	
 	# DESCRIPTION
 	$description	= $help.Description.Text
-	$Markdown 		+= "### Description`n`n$description`n`n"
+	$Markdown 		+= "### Description`n$description`n`n"
 	
 	# PARAMETERS
 	$Parameters		= $help.Parameters.parameter 
