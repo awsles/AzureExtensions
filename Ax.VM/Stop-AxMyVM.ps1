@@ -17,8 +17,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.05
-	Date: 16-Nov-20
+	Version: v0.06
+	Date: 13-Dec-20
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -59,9 +59,21 @@ $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service P
 # |  LOGIN																						|
 # +=================================================================================================+
 write-host -ForegroundColor Yellow "Logging in..."
-Login-AzAccount -ServicePrincipal -CertificateThumbprint $CertificateThumbprint `
-				-TenantId $TenantId -ApplicationId $ApplicationId
-
+$Error.Clear()
+Try {
+	Login-AzAccount -ServicePrincipal -CertificateThumbprint $CertificateThumbprint `
+					-TenantId $TenantId -ApplicationId $ApplicationId `
+					-ErrorAction Stop
+}
+Catch [System.ArgumentNullException] {
+	write-host -ForegroundColor Yellow 'Invalid or null parameter to Login-AzAccount. Be sure that $TenantId, $CertificateThumbprint, and $ApplicationId are appropriately configured.'
+	return
+}
+Catch {
+	write-host -ForegroundColor Yellow "Unable to login using service principal"
+	write-host "EXCEPTION: [$($Error[0].exception.GetType().fullname)]: $($Error[0].Exception.Message)"
+	return
+}
 
 # +=================================================================================================+
 # |  KUSTO QUERY DEFINITIONS																		|
@@ -109,7 +121,7 @@ if ($VMTenantId -And ($TenantId -ne $VMTenantId))
 # 
 if ($VMInfo.Compute)
 {
-	write-verbose "Found VM via IMDS endpoint"
+	write-host "Found VM via IMDS endpoint"
 	$ThisVM = $VmInfo.Compute
 }
 else
