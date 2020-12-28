@@ -17,8 +17,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.06
-	Date: 13-Dec-20
+	Version: v0.06a
+	Date: 23-Dec-20
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -29,6 +29,10 @@
 	https://powershell.org/2015/08/list-users-logged-on-to-your-machines/
 	https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service
 	https://docs.microsoft.com/en-us/azure/active-directory/devices/howto-vm-sign-in-azure-ad-windows  # Useful info
+
+	Azure – https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service
+	AWS – https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-identity-documents.html
+	GCP – https://cloud.google.com/compute/docs/storing-retrieving-metadata
 #>
 
 # +=================================================================================================+
