@@ -63,12 +63,6 @@ $CertificateThumbprint 	= 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'				# Certificate Thum
 $ApplicationId 			= 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' 				# ApplicationID for your App Service Principal
 $TenantName				= 'tenant.onmicrosoft.com'						# tenant name (.onmicrosoft.com)
 
-# My INFO  [DO NOT SAVE THIS IN GITHUB]
-# Service principal name is App_Auditor
-#$TenantId				= '64e67b02-e271-467d-b69c-392105c29915'			# cloudmail365.onmicrosoft.com
-#$CertificateThumbprint 	= 'ACA7AD6907B05438C1087AA562F8ADED1FF27A38'		# 
-#$ApplicationId 			= '15d9e263-166e-49bc-bc9f-30f3b263a49f'			# App_VMOperator
-#$TenantName					= 'cloudmail365.onmicrosoft.com'
 
 
 # +=================================================================================================+
@@ -207,7 +201,7 @@ Function TagResources
 				if ($CreatedBy)
 				{
 					$CreatedBy = $Tags[$CreatedBy]
-					$OriginalCreatedBy = $CreatedB
+					$OriginalCreatedBy = $CreatedBy
 				}
 				else
 				{
