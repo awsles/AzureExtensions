@@ -17,8 +17,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.06a
-	Date: 23-Dec-20
+	Version: v0.08
+	Date: 31-Oct-21
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -59,6 +59,20 @@ $CertificateThumbprint	= '**SET_THIS_FIRST**'			# Certificate Thumbprint for App
 $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service Principal
 
 
+
+# +=================================================================================================+
+# |  Disconnect VPN																					|
+# +=================================================================================================+
+$vpnApp = 'C:\Program Files\NordVPN\Nordvpn.exe'
+$arguments = '--disconnect'
+if (test-path -path "C:\Program Files\NordVPN\Nordvpn.exe")
+{
+	write-host -ForegroundColor Yellow "Disconnecting VPN..."
+	Invoke-Command -ScriptBlock { & $vpnApp $arguments }
+}
+
+
+
 # +=================================================================================================+
 # |  LOGIN																						|
 # +=================================================================================================+
@@ -71,13 +85,16 @@ Try {
 }
 Catch [System.ArgumentNullException] {
 	write-host -ForegroundColor Yellow 'Invalid or null parameter to Login-AzAccount. Be sure that $TenantId, $CertificateThumbprint, and $ApplicationId are appropriately configured.'
+	Start-Sleep -Seconds 15
 	return
 }
 Catch {
 	write-host -ForegroundColor Yellow "Unable to login using service principal"
 	write-host "EXCEPTION: [$($Error[0].exception.GetType().fullname)]: $($Error[0].Exception.Message)"
+	Start-Sleep -Seconds 15
 	return
 }
+
 
 # +=================================================================================================+
 # |  KUSTO QUERY DEFINITIONS																		|
@@ -119,6 +136,7 @@ $VMPublicIP			= Invoke-RestMethod -Headers @{"Metadata"="true"}  -UseBasicParsin
 if ($VMTenantId -And ($TenantId -ne $VMTenantId))
 {
 	write-warning "Service Principal TenantID does not match VM TenantID - VM cannot be deallocated"
+	Start-Sleep -Seconds 15
 	return;
 }
 
