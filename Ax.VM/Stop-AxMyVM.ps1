@@ -14,11 +14,18 @@
 	
 .PARAMETER Force
 	If set, the user is not asked to confirm the shutdown.
+	
+.PARAMETER Wait
+	Indicates the name of a running process to wait on.  If the process is running,
+	then the script will sleep for 120 seconds and try again.
+	
+	You can create a Windows Desktop Shortcut with the -Wait pamater by setting the Target to:
+	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -command "& C:\Users\Overlord\Desktop\Stop-AxMyVM.ps1 -Wait PROCESSNAME"
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.06a
-	Date: 23-Dec-20
+	Version: v0.09 
+	Date: 02-Jan-22
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -40,7 +47,8 @@
 # +=================================================================================================+
 [cmdletbinding()]   #  Add -Verbose support; use: [cmdletbinding(SupportsShouldProcess=$True)] to add WhatIf support
 param(
-	[Parameter(Mandatory=$false)] [switch] $Force 				= $false
+	[Parameter(Mandatory=$false)] [switch] $Force 				= $false,
+	[Parameter(Mandatory=$false)] [string] $Wait
 )
 
 
@@ -59,6 +67,40 @@ $CertificateThumbprint	= '**SET_THIS_FIRST**'			# Certificate Thumbprint for App
 $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service Principal
 
 
+
+# +=================================================================================================+
+# |  Wait																							|
+# +=================================================================================================+
+if ($Wait)
+{
+	if (!(Get-Process -Name $Wait -ErrorAction SilentlyContinue))
+	{
+		write-warning "No process named '$Wait' was found. Aborting Shutdown."
+		return $null
+	}
+	write-host -ForegroundColor Yellow -NoNewLine "Waiting for process '$Wait' to complete"
+	While (Get-Process -Name $Wait -ErrorAction SilentlyContinue)
+	{
+		Start-Sleep -Seconds 120
+		write-host -NoNewLine '.'
+	}
+	write-host " Done"
+}
+RETURN
+
+# +=================================================================================================+
+# |  Disconnect VPN																					|
+# +=================================================================================================+
+$vpnApp = 'C:\Program Files\NordVPN\Nordvpn.exe'
+$arguments = '--disconnect'
+if (test-path -path "C:\Program Files\NordVPN\Nordvpn.exe")
+{
+	write-host -ForegroundColor Yellow "Disconnecting VPN..."
+	Invoke-Command -ScriptBlock { & $vpnApp $arguments }
+	Start-Sleep -Seconds 2
+}
+
+
 # +=================================================================================================+
 # |  LOGIN																						|
 # +=================================================================================================+
@@ -71,13 +113,16 @@ Try {
 }
 Catch [System.ArgumentNullException] {
 	write-host -ForegroundColor Yellow 'Invalid or null parameter to Login-AzAccount. Be sure that $TenantId, $CertificateThumbprint, and $ApplicationId are appropriately configured.'
+	Start-Sleep -Seconds 15
 	return
 }
 Catch {
 	write-host -ForegroundColor Yellow "Unable to login using service principal"
 	write-host "EXCEPTION: [$($Error[0].exception.GetType().fullname)]: $($Error[0].Exception.Message)"
+	Start-Sleep -Seconds 15
 	return
 }
+
 
 # +=================================================================================================+
 # |  KUSTO QUERY DEFINITIONS																		|
@@ -119,6 +164,7 @@ $VMPublicIP			= Invoke-RestMethod -Headers @{"Metadata"="true"}  -UseBasicParsin
 if ($VMTenantId -And ($TenantId -ne $VMTenantId))
 {
 	write-warning "Service Principal TenantID does not match VM TenantID - VM cannot be deallocated"
+	Start-Sleep -Seconds 15
 	return;
 }
 
