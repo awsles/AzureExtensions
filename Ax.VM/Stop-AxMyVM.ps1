@@ -24,8 +24,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.09 
-	Date: 02-Jan-22
+	Version: v0.109 
+	Date: 03-Jan-22
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -86,7 +86,7 @@ if ($Wait)
 	}
 	write-host " Done"
 }
-RETURN
+
 
 # +=================================================================================================+
 # |  Disconnect VPN																					|
