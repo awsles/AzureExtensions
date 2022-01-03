@@ -76,6 +76,7 @@ if ($Wait)
 	if (!(Get-Process -Name $Wait -ErrorAction SilentlyContinue))
 	{
 		write-warning "No process named '$Wait' was found. Aborting Shutdown."
+		Start-Sleep -Seconds 15
 		return $null
 	}
 	write-host -ForegroundColor Yellow -NoNewLine "Waiting for process '$Wait' to complete"
