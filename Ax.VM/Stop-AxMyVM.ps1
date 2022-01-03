@@ -73,7 +73,7 @@ $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service P
 # +=================================================================================================+
 if ($Wait)
 {
-	if (!(Get-Process -Name $Wait -ErrorAction SilentlyContinue))
+	if (!$Force -And !(Get-Process -Name $Wait -ErrorAction SilentlyContinue))
 	{
 		write-warning "No process named '$Wait' was found. Aborting Shutdown."
 		Start-Sleep -Seconds 15
