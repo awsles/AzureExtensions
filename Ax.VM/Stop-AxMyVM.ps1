@@ -22,10 +22,13 @@
 	You can create a Windows Desktop Shortcut with the -Wait pamater by setting the Target to:
 	C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -command "& C:\Users\Overlord\Desktop\Stop-AxMyVM.ps1 -Wait PROCESSNAME"
 
+.PARAMETER Sleep
+	Indicates how many minutes to sleep before shutting down. Implies $Froce = $True.
+
 .NOTES
 	Author: Lester Waters
-	Version: v0.109 
-	Date: 03-Jan-22
+	Version: v0.12
+	Date: 11-Dec-22
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -48,7 +51,8 @@
 [cmdletbinding()]   #  Add -Verbose support; use: [cmdletbinding(SupportsShouldProcess=$True)] to add WhatIf support
 param(
 	[Parameter(Mandatory=$false)] [switch] $Force 				= $false,
-	[Parameter(Mandatory=$false)] [string] $Wait
+	[Parameter(Mandatory=$false)] [string] $Wait,
+	[Parameter(Mandatory=$false)] [int] $Sleep = 0
 )
 
 
@@ -61,11 +65,21 @@ Import-Module Az.ResourceGraph
 # +=================================================================================================+
 # |  CONSTANTS																						|
 # +=================================================================================================+
-# Service principal name is <<insert_name>>
+# Service principal name is App_VMOperator
 $TenantId				= '**SET_THIS_FIRST**'			# Your Azure Tenant ID
 $CertificateThumbprint	= '**SET_THIS_FIRST**'			# Certificate Thumbprint for App Service Principal
 $ApplicationId			= '**SET_THIS_FIRST**'			# ApplicationID for your App Service Principal
 
+
+# +=================================================================================================+
+# |  Wait																							|
+# +=================================================================================================+
+if ($Sleep -gt 0 -And $Sleep -lt 3600)
+{
+	write-host -ForegroundColor Yellow "Sleeping for $Sleep minutes..."
+	Start-Sleep -Seconds (60*$Sleep)
+	$Force = $true
+}
 
 
 # +=================================================================================================+
@@ -85,6 +99,7 @@ if ($Wait)
 		Start-Sleep -Seconds 120
 		write-host -NoNewLine '.'
 	}
+	$Force = $true
 	write-host " Done"
 }
 
