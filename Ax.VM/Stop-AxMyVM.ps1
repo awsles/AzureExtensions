@@ -27,8 +27,8 @@
 
 .NOTES
 	Author: Lester Waters
-	Version: v0.12
-	Date: 11-Dec-22
+	Version: v0.12b (cred change)
+	Date: 14-Mar-24
 	
 	To run powershell as one-click, apply the following registry setting:
 	[HKEY_CLASSES_ROOT\Microsoft.PowerShellScript.1\Shell\Open\Command]
@@ -50,7 +50,7 @@
 # +=================================================================================================+
 [cmdletbinding()]   #  Add -Verbose support; use: [cmdletbinding(SupportsShouldProcess=$True)] to add WhatIf support
 param(
-	[Parameter(Mandatory=$false)] [switch] $Force 				= $false,
+	[Parameter(Mandatory=$false)] [switch] $Force 				= $true,
 	[Parameter(Mandatory=$false)] [string] $Wait,
 	[Parameter(Mandatory=$false)] [int] $Sleep = 0
 )
@@ -90,7 +90,7 @@ if ($Wait)
 	if (!$Force -And !(Get-Process -Name $Wait -ErrorAction SilentlyContinue))
 	{
 		write-warning "No process named '$Wait' was found. Aborting Shutdown."
-		Start-Sleep -Seconds 15
+		# Start-Sleep -Seconds 15
 		return $null
 	}
 	write-host -ForegroundColor Yellow -NoNewLine "Waiting for process '$Wait' to complete"
